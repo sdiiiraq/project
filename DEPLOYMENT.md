@@ -3,6 +3,18 @@
 المشروع Monorepo بتطبيقين، يُنشران كـ **مشروعين منفصلين على Vercel** من نفس المستودع
 (هذا هو الأسلوب القياسي لنشر Next.js + خلفية API معًا على Vercel):
 
+## ⚠️ خطأ شائع: "No Output Directory named 'public' found"
+
+هذا الخطأ يعني أن مشروع Vercel يبني من **جذر المستودع** (Root Directory الافتراضي)
+بدل `apps/web`. لا يوجد أي `vercel.json` في جذر المستودع عن قصد — كل تطبيق له
+`vercel.json` خاص به (`apps/web` يعتمد على الكشف التلقائي لـ Next.js، و`apps/api`
+لديه `apps/api/vercel.json`). إذا أضفت `vercel.json` في الجذر أو تركت Root Directory
+فارغًا، فسيحاول Vercel بناء كل التطبيقات معًا من الجذر ولن يجد مخرجات Next.js
+(الموجودة في `apps/web/.next`)، فيسقط افتراضيًا على توقّع مجلد `public` ثابت.
+
+**الحل:** في إعدادات كل مشروع على Vercel (Project Settings → General → Root Directory)،
+حدد المسار الصحيح كما في الجدول أدناه، ولا تُنشئ `vercel.json` في جذر المستودع.
+
 | التطبيق | Root Directory | Framework Preset |
 |---|---|---|
 | `apps/web` (Next.js) | `apps/web` | Next.js (كشف تلقائي) |
