@@ -107,8 +107,9 @@ export const OfflineRepository = {
   async cacheCustomers(customers: CachedCustomer[]): Promise<void> {
     await withStore(CUSTOMERS_STORE, 'readwrite', (s) => {
       // استبدال كامل لذاكرة التخزين المؤقتة للمشتركين المعينين
-      s.clear();
+      const clearRequest = s.clear();
       for (const c of customers) s.put(c);
+      return clearRequest;
     });
   },
 
