@@ -1,0 +1,35 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalEnv": ["NODE_ENV", "VERCEL", "VERCEL_ENV", "VERCEL_URL"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
+      "env": [
+        "NEXT_PUBLIC_API_URL",
+        "DATABASE_URL",
+        "REDIS_URL",
+        "JWT_ACCESS_SECRET",
+        "JWT_REFRESH_SECRET",
+        "ACCESS_TOKEN_TTL_SECONDS",
+        "REFRESH_TOKEN_TTL_DAYS",
+        "WEB_URL",
+        "CORS_ORIGINS",
+        "STORAGE_DRIVER",
+        "STORAGE_LOCAL_DIR",
+        "BLOB_READ_WRITE_TOKEN",
+        "RATE_LIMIT_AUTH_MAX",
+        "RATE_LIMIT_GLOBAL_MAX",
+        "ENABLE_API_DOCS",
+        "SENTRY_DSN",
+        "CRON_SECRET",
+        "PORT",
+        "LOG_LEVEL"
+      ]
+    },
+    "dev": { "cache": false, "persistent": true },
+    "lint": {},
+    "typecheck": {},
+    "test": {}
+  }
+}

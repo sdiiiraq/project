@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd ../.. && pnpm --filter @app/prisma generate",
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile=false",
+  "functions": {
+    "api/[...path].ts": {
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/v1/internal/cron/billing-overdue-sweep",
+      "schedule": "0 5 * * *"
+    }
+  ]
+}
