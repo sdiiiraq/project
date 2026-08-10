@@ -81,7 +81,7 @@ export function CustomerDetail({ id }: { id: string }) {
         {activeTab === 'نظرة عامة' && (
           <div className="space-y-2 text-sm">
             <p><span className="text-muted-foreground">الحي:</span> {customer.neighborhood ?? '—'}</p>
-            <p><span className="text-muted-foreground">رقم الدار:</span> {(customer as Record<string, unknown>).houseNumber as string ?? '—'}</p>
+            <p><span className="text-muted-foreground">رقم الدار:</span> {customer.houseNumber ?? '—'}</p>
           </div>
         )}
         {activeTab === 'الاشتراكات' && (

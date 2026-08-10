@@ -75,6 +75,6 @@ export const ar = {
     noPayments: 'لا توجد دفعات ضمن الفترة المحددة',
     noOutstanding: 'لا توجد ديون مستحقة',
   },
-} as const;
+};
 
 export type Messages = typeof ar;

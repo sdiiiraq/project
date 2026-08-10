@@ -138,7 +138,8 @@ export const apiClient = {
     void: (id: string, data: { reason: string }) => request<unknown>(`/bills/${id}/void`, { method: 'POST', body: JSON.stringify(data) }),
   },
   payments: {
-    list: () => request<{ items: unknown[]; meta: unknown }>('/payments'),
+    list: (params?: Record<string, unknown>) => request<{ items: unknown[]; meta: unknown }>('/payments'),
+    get: (id: string) => request<unknown>(`/payments/${id}`),
     create: (data: unknown, idempotencyKey?: string) =>
       request<unknown>('/payments', {
         method: 'POST',

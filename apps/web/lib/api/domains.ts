@@ -109,7 +109,7 @@ export const generatorsClient = {
 
 export interface Customer {
   id: string; organizationId: string; generatorId: string; customerNumber: string;
-  fullName: string; phonePrimary: string; address: string | null; neighborhood: string | null;
+  fullName: string; phonePrimary: string; phoneSecondary?: string | null; address: string | null; neighborhood: string | null; houseNumber?: string | null;
   status: string; outstandingBalance?: string;
   generator?: { id: string; name: string };
 }
