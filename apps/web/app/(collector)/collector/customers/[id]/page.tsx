@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Wallet } from 'lucide-react';
-import Link from 'next/navigation';
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { EmptyState, LoadingSkeleton, MoneyDisplay } from '@/components/ui/status';
 import { OfflineRepository } from '@/offline/db';
