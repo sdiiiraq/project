@@ -231,6 +231,7 @@ model Organization {
   payments               Payment[]
   receipts               Receipt[]
   collectors             Collector[]
+  collectorAssignments   CollectorAssignment[]
   collectionSessions     CollectionSession[]
   expenseCategories      ExpenseCategory[]
   expenses               Expense[]
@@ -441,6 +442,7 @@ model Generator {
   collectorAssignments CollectorAssignment[]
   collectionSessions   CollectionSession[]
   billingRuns          BillingRun[]
+  oilChanges           OilChange[]
 
   @@unique([organizationId, code])
   @@index([organizationId, status])
