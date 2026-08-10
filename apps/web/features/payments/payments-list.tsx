@@ -20,7 +20,7 @@ export function PaymentsList() {
   if (isError) return <ErrorState message="تعذر تحميل الدفعات" onRetry={() => refetch()} />;
 
   const payments = (data?.items ?? []) as Array<Record<string, unknown>>;
-  const meta = data?.meta;
+  const meta = data?.meta as { page: number; pageSize: number; total: number } | undefined;
 
   return (
     <div className="space-y-4">
