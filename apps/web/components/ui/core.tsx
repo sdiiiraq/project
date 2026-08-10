@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { forwardRef, type ButtonHTMLAttributes, type HTMLAttributes, type InputHTMLAttributes } from 'react';
+import { forwardRef, type ButtonHTMLAttributes, type HTMLAttributes, type InputHTMLAttributes, type LabelHTMLAttributes } from 'react';
 
 /** مكونات UI أساسية قابلة لإعادة الاستخدام (§98). تُستكمل بقية المكونات في الأجزاء التالية. */
 
@@ -54,6 +54,6 @@ export function CardContent({ className, ...props }: HTMLAttributes<HTMLDivEleme
   return <div className={cn('p-6 pt-0', className)} {...props} />;
 }
 
-export function Label({ className, ...props }: HTMLAttributes<HTMLLabelElement>) {
+export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElement>) {
   return <label className={cn('text-sm font-medium leading-none', className)} {...props} />;
 }
