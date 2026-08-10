@@ -64,8 +64,8 @@ export function SessionDetail({ id }: { id: string }) {
           <CardContent className="space-y-3">
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="ملاحظات المطابقة (اختياري)" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" rows={2} />
             <div className="flex gap-2">
-              <Button onClick={() => reconcileMutation.mutate()} disabled={reconcileMutation.isSubmitting}>
-                {reconcileMutation.isSubmitting ? 'جارٍ الحفظ...' : 'تسليم/مطابقة'}
+              <Button onClick={() => reconcileMutation.mutate()} disabled={reconcileMutation.isPending}>
+                {reconcileMutation.isPending ? 'جارٍ الحفظ...' : 'تسليم/مطابقة'}
               </Button>
             </div>
             {reconcileMutation.isError && <p className="text-sm text-destructive">تعذر حفظ الإجراء. حاول مرة أخرى.</p>}

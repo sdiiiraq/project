@@ -102,8 +102,8 @@ export function PaymentDetail({ id }: { id: string }) {
               <textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="سبب العكس (إلزامي)" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" rows={2} />
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setShowReverse(false)}>إلغاء</Button>
-                <Button variant="destructive" disabled={reason.trim().length < 3 || reverseMutation.isSubmitting} onClick={() => reverseMutation.mutate({ reason })}>
-                  {reverseMutation.isSubmitting ? 'جارٍ العكس...' : 'تأكيد العكس'}
+                <Button variant="destructive" disabled={reason.trim().length < 3 || reverseMutation.isPending} onClick={() => reverseMutation.mutate({ reason })}>
+                  {reverseMutation.isPending ? 'جارٍ العكس...' : 'تأكيد العكس'}
                 </Button>
               </div>
               {reverseMutation.isError && <p className="text-sm text-destructive">تعذر عكس الدفعة. حاول مرة أخرى.</p>}

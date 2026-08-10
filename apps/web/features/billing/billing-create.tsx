@@ -59,14 +59,14 @@ export function BillingCreate() {
               <Input id="periodEnd" type="date" value={periodEnd} onChange={(e) => { setPeriodEnd(e.target.value); setPreview(null); }} />
             </div>
           </div>
-          <Button onClick={() => previewMutation.mutate()} disabled={!canPreview || previewMutation.isSubmitting}>
-            {previewMutation.isSubmitting ? 'جارٍ الحساب...' : 'معاينة الحساب'}
+          <Button onClick={() => previewMutation.mutate()} disabled={!canPreview || previewMutation.isPending}>
+            {previewMutation.isPending ? 'جارٍ الحساب...' : 'معاينة الحساب'}
           </Button>
           {previewMutation.isError && <p className="text-sm text-destructive">تعذرت المعاينة. تحقق من الفترة والمولدة.</p>}
         </CardContent>
       </Card>
 
-      {previewMutation.isSubmitting && <LoadingSkeleton rows={4} />}
+      {previewMutation.isPending && <LoadingSkeleton rows={4} />}
 
       {preview && (
         <Card>
@@ -122,8 +122,8 @@ export function BillingCreate() {
                   <>
                     <p className="text-sm text-muted-foreground">هل أنت متأكد من إصدار {preview.count} فاتورة؟ لا يمكن التراجع بسهولة.</p>
                     <Button variant="outline" onClick={() => setConfirming(false)}>تراجع</Button>
-                    <Button onClick={() => generateMutation.mutate()} disabled={generateMutation.isSubmitting}>
-                      {generateMutation.isSubmitting ? 'جارٍ الإصدار...' : 'إصدار نهائي'}
+                    <Button onClick={() => generateMutation.mutate()} disabled={generateMutation.isPending}>
+                      {generateMutation.isPending ? 'جارٍ الإصدار...' : 'إصدار نهائي'}
                     </Button>
                   </>
                 )}
