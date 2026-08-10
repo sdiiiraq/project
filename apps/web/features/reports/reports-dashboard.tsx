@@ -23,17 +23,17 @@ export function ReportsDashboard() {
 
   const revenueQuery = useQuery({
     queryKey: ['reports-revenue'],
-    queryFn: () => reportsClient.revenue() as Promise<RevenueReport>,
+    queryFn: () => reportsClient.revenue() as unknown as Promise<RevenueReport>,
     enabled: tab === 'revenue',
   });
   const outstandingQuery = useQuery({
     queryKey: ['reports-outstanding'],
-    queryFn: () => reportsClient.outstanding() as Promise<OutstandingReport>,
+    queryFn: () => reportsClient.outstanding() as unknown as Promise<OutstandingReport>,
     enabled: tab === 'outstanding',
   });
   const profitabilityQuery = useQuery({
     queryKey: ['reports-profitability'],
-    queryFn: () => reportsClient.profitability() as Promise<ProfitabilityReport>,
+    queryFn: () => reportsClient.profitability() as unknown as Promise<ProfitabilityReport>,
     enabled: tab === 'profitability' && can('financial_reports.read'),
   });
 
