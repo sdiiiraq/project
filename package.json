@@ -12,7 +12,7 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
-    "postinstall": "pnpm --filter @app/prisma generate",
+    "postinstall": "pnpm --filter @app/prisma generate || true",
     "db:migrate": "pnpm --filter @app/prisma migrate",
     "db:deploy": "pnpm --filter @app/prisma migrate:deploy",
     "db:seed": "pnpm --filter @app/prisma seed",
