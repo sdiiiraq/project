@@ -14,37 +14,189 @@ datasource db {
 // ENUMS
 // ============================================================
 
-enum OrganizationStatus { ACTIVE SUSPENDED ARCHIVED }
-enum UserStatus { ACTIVE DISABLED PENDING }
-enum GeneratorStatus { ACTIVE INACTIVE MAINTENANCE FAULT ARCHIVED }
-enum OperatingStatus { ON OFF MAINTENANCE FAULT UNKNOWN }
-enum FuelType { DIESEL GASOLINE GAS HYBRID OTHER }
-enum CustomerStatus { ACTIVE SUSPENDED ARCHIVED }
-enum SubscriptionStatus { PENDING ACTIVE SUSPENDED CANCELLED EXPIRED }
-enum BillingCycle { MONTHLY BIMONTHLY QUARTERLY CUSTOM }
-enum PlanStatus { ACTIVE INACTIVE }
-enum BillStatus { DRAFT ISSUED PARTIALLY_PAID PAID OVERDUE VOID }
-enum PaymentMethod { CASH BANK_TRANSFER CARD ONLINE OTHER }
-enum PaymentStatus { COMPLETED REVERSED }
-enum SessionStatus { OPEN SUBMITTED RECONCILED DISPUTED APPROVED }
-enum AssignmentStatus { ACTIVE ENDED }
-enum ExpenseStatus { PENDING APPROVED REJECTED }
-enum AdjustmentStatus { PENDING APPROVED REJECTED }
-enum SyncStatus { PENDING SYNCING SYNCED FAILED CONFLICT }
-enum NotificationChannel { IN_APP SMS WHATSAPP EMAIL }
-enum NotificationType { BILL_CREATED PAYMENT_RECEIVED PAYMENT_RECEIPT PAYMENT_REMINDER OVERDUE OUTAGE MAINTENANCE SYSTEM }
-enum NotificationStatus { QUEUED SENT FAILED CANCELLED }
-enum RuntimeSource { MANUAL IOT IMPORTED }
-enum OutageType { PLANNED UNPLANNED }
-enum MaintenanceStatus { PLANNED IN_PROGRESS COMPLETED CANCELLED }
-enum EmployeeStatus { ACTIVE INACTIVE }
-enum FuelUnit { LITER GALLON BARREL }
-enum FuelInventoryType { PURCHASE_IN CONSUMPTION_OUT ADJUSTMENT }
-enum AdjustmentType { DISCOUNT PENALTY CREDIT DEBIT CORRECTION REFUND }
-enum DiscountType { FIXED PERCENTAGE }
-enum BillingRunStatus { PENDING RUNNING COMPLETED PARTIALLY_FAILED FAILED }
-enum OrgSubscriptionStatus { TRIAL ACTIVE SUSPENDED EXPIRED CANCELLED }
-enum ExportJobStatus { PENDING RUNNING COMPLETED FAILED }
+enum OrganizationStatus {
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+enum UserStatus {
+  ACTIVE
+  DISABLED
+  PENDING
+}
+enum GeneratorStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+  FAULT
+  ARCHIVED
+}
+enum OperatingStatus {
+  ON
+  OFF
+  MAINTENANCE
+  FAULT
+  UNKNOWN
+}
+enum FuelType {
+  DIESEL
+  GASOLINE
+  GAS
+  HYBRID
+  OTHER
+}
+enum CustomerStatus {
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+  EXPIRED
+}
+enum BillingCycle {
+  MONTHLY
+  BIMONTHLY
+  QUARTERLY
+  CUSTOM
+}
+enum PlanStatus {
+  ACTIVE
+  INACTIVE
+}
+enum BillStatus {
+  DRAFT
+  ISSUED
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  VOID
+}
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CARD
+  ONLINE
+  OTHER
+}
+enum PaymentStatus {
+  COMPLETED
+  REVERSED
+}
+enum SessionStatus {
+  OPEN
+  SUBMITTED
+  RECONCILED
+  DISPUTED
+  APPROVED
+}
+enum AssignmentStatus {
+  ACTIVE
+  ENDED
+}
+enum ExpenseStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+enum AdjustmentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+enum SyncStatus {
+  PENDING
+  SYNCING
+  SYNCED
+  FAILED
+  CONFLICT
+}
+enum NotificationChannel {
+  IN_APP
+  SMS
+  WHATSAPP
+  EMAIL
+}
+enum NotificationType {
+  BILL_CREATED
+  PAYMENT_RECEIVED
+  PAYMENT_RECEIPT
+  PAYMENT_REMINDER
+  OVERDUE
+  OUTAGE
+  MAINTENANCE
+  SYSTEM
+}
+enum NotificationStatus {
+  QUEUED
+  SENT
+  FAILED
+  CANCELLED
+}
+enum RuntimeSource {
+  MANUAL
+  IOT
+  IMPORTED
+}
+enum OutageType {
+  PLANNED
+  UNPLANNED
+}
+enum MaintenanceStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+}
+enum FuelUnit {
+  LITER
+  GALLON
+  BARREL
+}
+enum FuelInventoryType {
+  PURCHASE_IN
+  CONSUMPTION_OUT
+  ADJUSTMENT
+}
+enum AdjustmentType {
+  DISCOUNT
+  PENALTY
+  CREDIT
+  DEBIT
+  CORRECTION
+  REFUND
+}
+enum DiscountType {
+  FIXED
+  PERCENTAGE
+}
+enum BillingRunStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  PARTIALLY_FAILED
+  FAILED
+}
+enum OrgSubscriptionStatus {
+  TRIAL
+  ACTIVE
+  SUSPENDED
+  EXPIRED
+  CANCELLED
+}
+enum ExportJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
 
 // ============================================================
 // IDENTITY & TENANCY
