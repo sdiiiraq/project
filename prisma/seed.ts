@@ -5,94 +5,13 @@
  */
 import { PrismaClient } from '@prisma/client';
 import argon2 from 'argon2';
+import { seedSystemData } from './lib/system-data';
 
 const prisma = new PrismaClient();
 
 const ARGON2_OPTIONS = { type: argon2.argon2id, memoryCost: 19456, timeCost: 2, parallelism: 1 };
 export const DEMO_PASSWORD = 'Dev#Generator2026';
 export const DEMO_ORG_ID = '11111111-2222-3333-4444-555555555555';
-
-const PERMISSION_KEYS = [
-  'organization.read', 'organization.update',
-  'generator.create', 'generator.read', 'generator.update', 'generator.delete',
-  'customer.create', 'customer.read', 'customer.update', 'customer.archive',
-  'subscription.create', 'subscription.read', 'subscription.update', 'subscription.cancel',
-  'bill.create', 'bill.read', 'bill.update', 'bill.adjust', 'bill.void',
-  'payment.create', 'payment.read', 'payment.reverse',
-  'collection.read', 'collection.create', 'collection.reconcile', 'collection.approve',
-  'expense.create', 'expense.read', 'expense.update', 'expense.approve',
-  'fuel.create', 'fuel.read', 'fuel.update', 'fuel.approve',
-  'maintenance.create', 'maintenance.read', 'maintenance.update',
-  'employee.create', 'employee.read', 'employee.update',
-  'operations.create', 'operations.read', 'operations.update',
-  'reports.read', 'financial_reports.read',
-  'file.upload', 'file.read', 'export.create', 'export.read',
-  'user.create', 'user.read', 'user.update', 'user.disable',
-  'role.manage', 'audit.read', 'settings.read', 'settings.update',
-];
-
-const ALL_ORG = [...PERMISSION_KEYS];
-
-const ROLE_DEFS: { name: string; description: string; permissions: string[] }[] = [
-  { name: 'SUPER_ADMIN', description: 'مدير المنصة', permissions: ALL_ORG },
-  { name: 'ORGANIZATION_OWNER', description: 'مالك المنظمة', permissions: ALL_ORG },
-  {
-    name: 'GENERATOR_OWNER', description: 'مالك مولدة',
-    permissions: [
-      'generator.read', 'generator.update',
-      'customer.create', 'customer.read', 'customer.update', 'customer.archive',
-      'subscription.create', 'subscription.read', 'subscription.update', 'subscription.cancel',
-      'bill.create', 'bill.read', 'bill.update', 'bill.adjust', 'bill.void',
-      'payment.create', 'payment.read', 'payment.reverse',
-      'collection.read', 'collection.create', 'collection.reconcile', 'collection.approve',
-      'expense.create', 'expense.read', 'expense.update', 'expense.approve',
-      'fuel.create', 'fuel.read', 'fuel.update', 'fuel.approve',
-      'maintenance.create', 'maintenance.read', 'maintenance.update',
-      'employee.create', 'employee.read', 'employee.update',
-      'operations.create', 'operations.read', 'operations.update',
-      'reports.read', 'financial_reports.read', 'audit.read',
-      'file.upload', 'file.read', 'export.create', 'export.read',
-    ],
-  },
-  {
-    name: 'GENERATOR_MANAGER', description: 'مدير مولدة',
-    permissions: [
-      'generator.read',
-      'customer.create', 'customer.read', 'customer.update', 'customer.archive',
-      'subscription.create', 'subscription.read', 'subscription.update', 'subscription.cancel',
-      'bill.create', 'bill.read', 'bill.update',
-      'payment.create', 'payment.read',
-      'collection.read', 'collection.create', 'collection.reconcile',
-      'expense.create', 'expense.read',
-      'fuel.create', 'fuel.read',
-      'maintenance.create', 'maintenance.read', 'maintenance.update',
-      'operations.create', 'operations.read', 'operations.update',
-      'employee.read', 'reports.read',
-      'file.upload', 'file.read', 'export.create', 'export.read',
-    ],
-  },
-  {
-    name: 'ACCOUNTANT', description: 'محاسب',
-    permissions: [
-      'organization.read', 'generator.read', 'customer.read', 'subscription.read',
-      'bill.read', 'bill.adjust',
-      'payment.read', 'payment.reverse',
-      'collection.read', 'collection.reconcile',
-      'expense.create', 'expense.read', 'expense.update', 'expense.approve',
-      'fuel.read', 'reports.read', 'financial_reports.read', 'audit.read',
-      'file.upload', 'file.read', 'export.create', 'export.read',
-    ],
-  },
-  {
-    name: 'COLLECTOR', description: 'جابٍ',
-    permissions: ['customer.read', 'bill.read', 'payment.create', 'payment.read', 'collection.read', 'collection.create'],
-  },
-  {
-    name: 'TECHNICIAN', description: 'فني',
-    permissions: ['generator.read', 'operations.create', 'operations.read', 'operations.update', 'maintenance.create', 'maintenance.read', 'maintenance.update', 'fuel.read'],
-  },
-  { name: 'CUSTOMER', description: 'مشترك (بوابة المشتركين مستقبلًا)', permissions: [] },
-];
 
 const EXPENSE_CATEGORIES = [
   { name: 'fuel', nameAr: 'وقود' },
@@ -112,24 +31,8 @@ async function main(): Promise<void> {
     throw new Error('Seed is development-only. Refusing to run in production (§175).');
   }
 
-  // ---------- الصلاحيات ----------
-  for (const key of PERMISSION_KEYS) {
-    await prisma.permission.upsert({ where: { key }, update: {}, create: { key } });
-  }
-
-  // ---------- الأدوار + ربط الصلاحيات ----------
-  for (const def of ROLE_DEFS) {
-    const role = await prisma.role.upsert({
-      where: { name: def.name },
-      update: { description: def.description },
-      create: { name: def.name, description: def.description, systemRole: true },
-    });
-    await prisma.rolePermission.deleteMany({ where: { roleId: role.id } });
-    for (const key of def.permissions) {
-      const permission = await prisma.permission.findUniqueOrThrow({ where: { key } });
-      await prisma.rolePermission.create({ data: { roleId: role.id, permissionId: permission.id } });
-    }
-  }
+  // ---------- الصلاحيات + الأدوار ----------
+  await seedSystemData(prisma);
 
   // ---------- منظمة تجريبية ----------
   const org = await prisma.organization.upsert({

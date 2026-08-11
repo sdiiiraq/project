@@ -7,6 +7,7 @@
     "migrate": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "seed": "ts-node seed.ts",
+    "seed:admin": "ts-node seed-admin.ts",
     "studio": "prisma studio"
   },
   "prisma": {
