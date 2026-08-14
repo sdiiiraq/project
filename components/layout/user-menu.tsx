@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, Settings, User as UserIcon } from "lucide-react";
+import { LogOut, Settings, ShieldCheck, User as UserIcon } from "lucide-react";
 import Link from "next/link";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -23,7 +23,15 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-export function UserMenu({ fullName, email }: { fullName: string; email?: string | null }) {
+export function UserMenu({
+  fullName,
+  email,
+  isPlatformAdmin = false,
+}: {
+  fullName: string;
+  email?: string | null;
+  isPlatformAdmin?: boolean;
+}) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="outline-none">
@@ -39,6 +47,13 @@ export function UserMenu({ fullName, email }: { fullName: string; email?: string
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        {isPlatformAdmin && (
+          <DropdownMenuItem asChild>
+            <Link href="/admin" className="font-medium text-primary focus:text-primary">
+              <ShieldCheck className="h-4 w-4" /> لوحة إدارة المنصة
+            </Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem asChild>
           <Link href="/settings">
             <Settings className="h-4 w-4" /> الإعدادات

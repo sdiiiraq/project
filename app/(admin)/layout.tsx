@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { Logo } from "@/components/brand/logo";
-import { LayoutDashboard, Building2, Package, ScrollText, LogOut, LifeBuoy } from "lucide-react";
+import { LayoutDashboard, Building2, Package, ScrollText, LogOut, LifeBuoy, ArrowRightLeft } from "lucide-react";
 import { signOut } from "@/lib/actions/auth.actions";
 
 const ADMIN_NAV = [
@@ -38,6 +38,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </nav>
         <div className="border-t border-white/10 p-3">
           <p className="px-2 pb-2 text-xs text-secondary-foreground/60">{appUser?.fullName}</p>
+          <Link
+            href="/dashboard"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-secondary-foreground/80 hover:bg-white/10 hover:text-white"
+          >
+            <ArrowRightLeft className="h-[18px] w-[18px]" /> رجوع لمولدتي
+          </Link>
           <form action={signOut}>
             <button
               type="submit"

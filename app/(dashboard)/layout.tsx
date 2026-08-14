@@ -7,7 +7,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const { user, workspace, role, impersonating } = await requireWorkspace();
   if (!workspace.onboardedAt && !impersonating) redirect("/onboarding");
 
-  const appUser = await db.user.findUnique({ where: { id: user.id } });
+  const [appUser, platformAdmin] = await Promise.all([
+    db.user.findUnique({ where: { id: user.id } }),
+    db.platformAdmin.findUnique({ where: { userId: user.id } }),
+  ]);
 
   return (
     <AppShell
@@ -18,6 +21,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       fullName={appUser?.fullName ?? "مستخدم"}
       email={appUser?.email}
       impersonating={impersonating}
+      isPlatformAdmin={!!platformAdmin}
     >
       {children}
     </AppShell>

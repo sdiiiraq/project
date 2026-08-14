@@ -10,12 +10,14 @@ export async function Header({
   email,
   workspaceId,
   userId,
+  isPlatformAdmin = false,
 }: {
   workspaceName: string;
   fullName: string;
   email?: string | null;
   workspaceId: string;
   userId: string;
+  isPlatformAdmin?: boolean;
 }) {
   const unreadCount = await db.notification.count({
     where: { workspaceId, OR: [{ userId }, { userId: null }], readAt: null },
@@ -39,7 +41,7 @@ export async function Header({
             </Badge>
           )}
         </Link>
-        <UserMenu fullName={fullName} email={email} />
+        <UserMenu fullName={fullName} email={email} isPlatformAdmin={isPlatformAdmin} />
       </div>
     </header>
   );

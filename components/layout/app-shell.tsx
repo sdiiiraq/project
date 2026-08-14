@@ -15,6 +15,7 @@ export function AppShell({
   fullName,
   email,
   impersonating = false,
+  isPlatformAdmin = false,
   children,
 }: {
   role: MemberRole;
@@ -24,6 +25,7 @@ export function AppShell({
   fullName: string;
   email?: string | null;
   impersonating?: boolean;
+  isPlatformAdmin?: boolean;
   children: React.ReactNode;
 }) {
   const items = NAV_ITEMS.filter(
@@ -36,7 +38,14 @@ export function AppShell({
       <div className="flex min-h-0 flex-1">
         <Sidebar items={items} />
         <div className="flex min-w-0 flex-1 flex-col">
-          <Header workspaceName={workspaceName} fullName={fullName} email={email} workspaceId={workspaceId} userId={userId} />
+          <Header
+            workspaceName={workspaceName}
+            fullName={fullName}
+            email={email}
+            workspaceId={workspaceId}
+            userId={userId}
+            isPlatformAdmin={isPlatformAdmin}
+          />
           <main className="flex-1 overflow-x-hidden p-4 pb-24 lg:p-6 lg:pb-6">{children}</main>
         </div>
         <MobileNav items={items} />
