@@ -1,42 +1,10 @@
-# dependencies
-node_modules/
-.pnpm-store/
-
-# env
+node_modules
+.next
 .env
-.env.*
-!.env.example
-!.env.*.example
-
-# build output
-dist/
-.next/
-out/
-build/
+.env.local
+.env*.local
+.vercel
+dist
+coverage
 *.tsbuildinfo
-
-# prisma
-prisma/node_modules/
-
-# logs
-*.log
-npm-debug.log*
-pnpm-debug.log*
-
-# local storage driver (dev file uploads)
-.storage/
-
-# editor / OS
 .DS_Store
-.vscode/
-.idea/
-
-# turbo
-.turbo/
-
-# vercel
-.vercel/
-
-
-# testing
-coverage/

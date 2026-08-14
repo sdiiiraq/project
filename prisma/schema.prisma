@@ -1,8 +1,9 @@
+// AMPERE — Prisma schema
+// قاعدة بيانات متعددة المستأجرين (Multi-tenant). كل جدول مرتبط ببيانات مستأجر
+// (workspaceId) يجب أن يُفلتر دائمًا عبر lib/db المساعدة، وليس مباشرة.
+
 generator client {
-  provider      = "prisma-client-js"
-  // "native" للتطوير المحلي، و"rhel-openssl-3.0.x" لدوال Vercel اللاخادومية
-  // (بيئة تشغيل AWS Lambda / Amazon Linux 2023 التي يستخدمها Vercel لـ Node.js).
-  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -12,1363 +13,794 @@ datasource db {
 }
 
 // ============================================================
-// ENUMS
+// Identity / Tenancy / RBAC
 // ============================================================
 
-enum OrganizationStatus {
-  ACTIVE
-  SUSPENDED
-  ARCHIVED
-}
-enum UserStatus {
-  ACTIVE
-  DISABLED
-  PENDING
-}
-enum GeneratorStatus {
-  ACTIVE
-  INACTIVE
-  MAINTENANCE
-  FAULT
-  ARCHIVED
-}
-enum OperatingStatus {
-  ON
-  OFF
-  MAINTENANCE
-  FAULT
-  UNKNOWN
-}
-enum FuelType {
-  DIESEL
-  GASOLINE
-  GAS
-  HYBRID
-  OTHER
-}
-enum CustomerStatus {
-  ACTIVE
-  SUSPENDED
-  ARCHIVED
-}
-enum SubscriptionStatus {
-  PENDING
-  ACTIVE
-  SUSPENDED
-  CANCELLED
-  EXPIRED
-}
-enum BillingCycle {
-  MONTHLY
-  BIMONTHLY
-  QUARTERLY
-  CUSTOM
-}
-enum PlanStatus {
-  ACTIVE
-  INACTIVE
-}
-enum BillStatus {
-  DRAFT
-  ISSUED
-  PARTIALLY_PAID
-  PAID
-  OVERDUE
-  VOID
-}
-enum PaymentMethod {
-  CASH
-  BANK_TRANSFER
-  CARD
-  ONLINE
-  OTHER
-}
-enum PaymentStatus {
-  COMPLETED
-  REVERSED
-}
-enum SessionStatus {
-  OPEN
-  SUBMITTED
-  RECONCILED
-  DISPUTED
-  APPROVED
-}
-enum AssignmentStatus {
-  ACTIVE
-  ENDED
-}
-enum ExpenseStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-enum AdjustmentStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-enum SyncStatus {
-  PENDING
-  SYNCING
-  SYNCED
-  FAILED
-  CONFLICT
-}
-enum NotificationChannel {
-  IN_APP
-  SMS
-  WHATSAPP
-  EMAIL
-}
-enum NotificationType {
-  BILL_CREATED
-  PAYMENT_RECEIVED
-  PAYMENT_RECEIPT
-  PAYMENT_REMINDER
-  OVERDUE
-  OUTAGE
-  MAINTENANCE
-  SYSTEM
-}
-enum NotificationStatus {
-  QUEUED
-  SENT
-  FAILED
-  CANCELLED
-}
-enum RuntimeSource {
-  MANUAL
-  IOT
-  IMPORTED
-}
-enum OutageType {
-  PLANNED
-  UNPLANNED
-}
-enum MaintenanceStatus {
-  PLANNED
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-}
-enum EmployeeStatus {
-  ACTIVE
-  INACTIVE
-}
-enum FuelUnit {
-  LITER
-  GALLON
-  BARREL
-}
-enum FuelInventoryType {
-  PURCHASE_IN
-  CONSUMPTION_OUT
-  ADJUSTMENT
-}
-enum AdjustmentType {
-  DISCOUNT
-  PENALTY
-  CREDIT
-  DEBIT
-  CORRECTION
-  REFUND
-}
-enum DiscountType {
-  FIXED
-  PERCENTAGE
-}
-enum BillingRunStatus {
-  PENDING
-  RUNNING
-  COMPLETED
-  PARTIALLY_FAILED
-  FAILED
-}
-enum OrgSubscriptionStatus {
-  TRIAL
-  ACTIVE
-  SUSPENDED
-  EXPIRED
-  CANCELLED
-}
-enum ExportJobStatus {
-  PENDING
-  RUNNING
-  COMPLETED
-  FAILED
-}
-
-// ============================================================
-// IDENTITY & TENANCY
-// ============================================================
-
-model Organization {
-  id              String             @id @default(uuid())
-  name            String
-  legalName       String?
-  phone           String?
-  email           String?
-  address         String?
-  city            String?
-  governorate     String?
-  country         String             @default("Iraq")
-  defaultCurrency String             @default("IQD")
-  timezone        String             @default("Asia/Baghdad")
-  defaultLanguage String             @default("ar")
-  status          OrganizationStatus @default(ACTIVE)
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
-  deletedAt       DateTime?
-
-  users                  User[]
-  userRoles              UserRole[]
-  generators             Generator[]
-  customers              Customer[]
-  amperePlans            AmperePlan[]
-  subscriptions          Subscription[]
-  bills                  Bill[]
-  billAdjustments        BillAdjustment[]
-  payments               Payment[]
-  receipts               Receipt[]
-  collectors             Collector[]
-  collectorAssignments   CollectorAssignment[]
-  collectionSessions     CollectionSession[]
-  expenseCategories      ExpenseCategory[]
-  expenses               Expense[]
-  fuelSuppliers          FuelSupplier[]
-  fuelPurchases          FuelPurchase[]
-  fuelInventoryTxs       FuelInventoryTransaction[]
-  fuelConsumptionRecords FuelConsumptionRecord[]
-  generatorRuntimes      GeneratorRuntime[]
-  generatorOutages       GeneratorOutage[]
-  statusTransitions      GeneratorStatusTransition[]
-  maintenanceRecords     MaintenanceRecord[]
-  spareParts             SparePart[]
-  technicianActivities   TechnicianActivity[]
-  oilChanges             OilChange[]
-  employees              Employee[]
-  notifications          Notification[]
-  auditLogs              AuditLog[]
-  settings               OrganizationSetting[]
-  storedFiles            StoredFile[]
-  syncTransactions       SyncTransaction[]
-  idempotencyRecords     IdempotencyRecord[]
-  documentSequences      DocumentSequence[]
-  billingRuns            BillingRun[]
-  usageMetrics           UsageMetric[]
-  exportJobs             ExportJob[]
-  saasSubscription       OrganizationSubscription?
-
-  @@map("organizations")
-}
-
+// يطابق auth.users.id في Supabase — لا نخزّن كلمات المرور هنا إطلاقًا.
 model User {
-  id             String     @id @default(uuid())
-  organizationId String?
-  name           String
-  phone          String     @unique
-  email          String?
-  passwordHash   String?
-  status         UserStatus @default(ACTIVE)
-  lastLoginAt    DateTime?
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
-  deletedAt      DateTime?
+  id        String   @id @db.Uuid
+  fullName  String
+  email     String?  @unique
+  phone     String?  @unique
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  organization     Organization?        @relation(fields: [organizationId], references: [id])
-  roles            UserRole[]
-  generatorScopes  GeneratorUserScope[]
-  refreshTokens    RefreshToken[]
-  passwordResets   PasswordResetToken[]
-  devices          UserDevice[]
-  auditLogs        AuditLog[]           @relation("AuditActor")
-  notifications    Notification[]       @relation("NotificationRecipient")
-  billsCreated     Bill[]               @relation("BillCreator")
-  billsVoided      Bill[]               @relation("BillVoider")
-  paymentsCreated  Payment[]            @relation("PaymentCreator")
-  paymentsReversed Payment[]            @relation("PaymentReverser")
-  expensesCreated  Expense[]            @relation("ExpenseCreator")
-  expensesApproved Expense[]            @relation("ExpenseApprover")
-  fuelCreated      FuelPurchase[]       @relation("FuelCreator")
-  fuelApproved     FuelPurchase[]       @relation("FuelApprover")
-  collectorProfile Collector?
-  employeeProfile  Employee?
-  billingRuns      BillingRun[]
-  syncTransactions SyncTransaction[]
+  ownedWorkspaces      Workspace[]         @relation("WorkspaceOwner")
+  memberships          WorkspaceMember[]
+  collectorAssignments CollectorAssignment[] @relation("CollectorAssignmentCollector")
+  auditLogs            AuditLog[]
+  notifications        Notification[]
+  supportTickets       SupportTicket[]
+  supportMessages      SupportMessage[]
+  impersonationsAsAdmin AdminImpersonation[] @relation("ImpersonationAdmin")
+  platformAdmin         PlatformAdmin?
 
-  @@index([organizationId])
   @@map("users")
 }
 
-model Role {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  description String?
-  systemRole  Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+// هوية منفصلة تمامًا عن Workspace — تُمنح يدويًا فقط (عبر seed/DB)، لا عبر أي تسجيل ذاتي.
+model PlatformAdmin {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String   @default("SUPER_ADMIN")
+  createdAt DateTime @default(now())
 
-  userRoles   UserRole[]
-  permissions RolePermission[]
-
-  @@map("roles")
+  @@map("platform_admins")
 }
 
-model Permission {
-  id          String   @id @default(uuid())
-  key         String   @unique
-  description String?
-  createdAt   DateTime @default(now())
+enum WorkspaceStatus {
+  ACTIVE
+  SUSPENDED
+  DISABLED
+}
 
-  roles RolePermission[]
+model Workspace {
+  id        String          @id @default(uuid()) @db.Uuid
+  name      String
+  ownerId   String          @db.Uuid
+  owner     User            @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  status    WorkspaceStatus @default(ACTIVE)
+  region    String?
+  address   String?
+  onboardedAt DateTime?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  members              WorkspaceMember[]
+  generators           Generator[]
+  amperePlans          AmperePlan[]
+  customers            Customer[]
+  invoices             Invoice[]
+  payments             Payment[]
+  financialPeriods     FinancialPeriod[]
+  ledgerEntries        LedgerEntry[]
+  collectorAssignments CollectorAssignment[]
+  collectorSettlements CollectorSettlement[]
+  expenseCategories    ExpenseCategory[]
+  expenses             Expense[]
+  fuelPurchases        FuelPurchase[]
+  fuelUsages           FuelUsage[]
+  equipment            Equipment[]
+  maintenanceRecords   MaintenanceRecord[]
+  operatingSessions    OperatingSession[]
+  notifications        Notification[]
+  auditLogs            AuditLog[]
+  featureOverrides     WorkspaceFeatureOverride[]
+  usageRecords         Usage[]
+  platformSubscription PlatformSubscription?
+  supportTickets       SupportTicket[]
+  impersonations       AdminImpersonation[]
+  aiConversations      AIConversation[]
+
+  @@map("workspaces")
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  ACCOUNTANT
+  COLLECTOR
+  MAINTENANCE
+  VIEWER
+}
+
+model WorkspaceMember {
+  id          String     @id @default(uuid()) @db.Uuid
+  workspaceId String     @db.Uuid
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String     @db.Uuid
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        MemberRole
+  createdAt   DateTime   @default(now())
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+  @@map("workspace_members")
+}
+
+// صلاحية دقيقة واحدة (مثال: customers.create)
+model Permission {
+  key             String           @id
+  description     String
+  rolePermissions RolePermission[]
 
   @@map("permissions")
 }
 
-model UserRole {
-  id             String   @id @default(uuid())
-  userId         String
-  roleId         String
-  organizationId String
-  createdAt      DateTime @default(now())
-
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role         Role         @relation(fields: [roleId], references: [id])
-  organization Organization @relation(fields: [organizationId], references: [id])
-
-  @@unique([userId, roleId, organizationId])
-  @@index([organizationId])
-  @@map("user_roles")
-}
-
 model RolePermission {
-  id           String @id @default(uuid())
-  roleId       String
-  permissionId String
+  role           MemberRole
+  permissionKey  String
+  permission     Permission @relation(fields: [permissionKey], references: [key], onDelete: Cascade)
 
-  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-
-  @@unique([roleId, permissionId])
+  @@id([role, permissionKey])
   @@map("role_permissions")
 }
 
-model RefreshToken {
-  id             String    @id @default(uuid())
-  userId         String
-  organizationId String?
-  tokenHash      String    @unique
-  deviceId       String?
-  userAgent      String?
-  ipAddress      String?
-  expiresAt      DateTime
-  revokedAt      DateTime?
-  createdAt      DateTime  @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@map("refresh_tokens")
-}
-
-model PasswordResetToken {
-  id        String    @id @default(uuid())
-  userId    String
-  tokenHash String    @unique
-  expiresAt DateTime
-  usedAt    DateTime?
-  createdAt DateTime  @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@map("password_reset_tokens")
-}
-
-model UserDevice {
-  id               String    @id @default(uuid())
-  userId           String
-  deviceIdentifier String
-  platform         String?
-  lastSeenAt       DateTime?
-  status           String    @default("ACTIVE")
-  createdAt        DateTime  @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, deviceIdentifier])
-  @@map("user_devices")
-}
-
 // ============================================================
-// GENERATORS
+// Generator / Customers
 // ============================================================
 
 model Generator {
-  id                       String          @id @default(uuid())
-  organizationId           String
-  name                     String
-  code                     String?
-  address                  String?
-  city                     String?
-  governorate              String?
-  phone                    String?
-  status                   GeneratorStatus @default(ACTIVE)
-  operatingStatus          OperatingStatus @default(UNKNOWN)
-  fuelType                 FuelType        @default(DIESEL)
-  capacity                 Decimal?        @db.Decimal(12, 3)
-  defaultOperatingSchedule String?
-  notes                    String?
-  createdAt                DateTime        @default(now())
-  updatedAt                DateTime        @updatedAt
-  deletedAt                DateTime?
+  id           String   @id @default(uuid()) @db.Uuid
+  workspaceId  String   @db.Uuid
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name         String
+  ownerName    String?
+  phone        String?
+  region       String?
+  address      String?
+  capacityAmps Int?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  organization         Organization             @relation(fields: [organizationId], references: [id])
-  userScopes           GeneratorUserScope[]
-  customers            Customer[]
-  amperePlans          AmperePlan[]
-  subscriptions        Subscription[]
-  bills                Bill[]
-  payments             Payment[]
-  expenses             Expense[]
-  fuelPurchases        FuelPurchase[]
-  fuelInventoryTxs     FuelInventoryTransaction[]
-  fuelConsumptions     FuelConsumptionRecord[]
-  runtimes             GeneratorRuntime[]
-  outages              GeneratorOutage[]
-  statusTransitions    GeneratorStatusTransition[]
-  maintenanceRecords   MaintenanceRecord[]
-  employees            Employee[]
-  collectorAssignments CollectorAssignment[]
-  collectionSessions   CollectionSession[]
-  billingRuns          BillingRun[]
-  oilChanges           OilChange[]
+  customers         Customer[]
+  equipment         Equipment[]
+  operatingSessions OperatingSession[]
 
-  @@unique([organizationId, code])
-  @@index([organizationId, status])
+  @@index([workspaceId])
   @@map("generators")
 }
 
-model GeneratorUserScope {
-  id          String   @id @default(uuid())
-  userId      String
-  generatorId String
-  createdAt   DateTime @default(now())
-
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  generator Generator @relation(fields: [generatorId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, generatorId])
-  @@map("generator_user_scopes")
-}
-
-model GeneratorStatusTransition {
-  id             String          @id @default(uuid())
-  organizationId String
-  generatorId    String
-  fromStatus     OperatingStatus?
-  toStatus       OperatingStatus
-  reason         String?
-  changedBy      String
-  createdAt      DateTime        @default(now())
-
-  organization Organization @relation(fields: [organizationId], references: [id])
-  generator    Generator    @relation(fields: [generatorId], references: [id])
-
-  @@index([generatorId, createdAt])
-  @@map("generator_status_transitions")
-}
-
-// ============================================================
-// CUSTOMERS & PLANS & SUBSCRIPTIONS
-// ============================================================
-
-model Customer {
-  id             String         @id @default(uuid())
-  organizationId String
-  generatorId    String
-  customerNumber String
-  fullName       String
-  phonePrimary   String
-  phoneSecondary String?
-  address        String?
-  neighborhood   String?
-  houseNumber    String?
-  latitude       Decimal?       @db.Decimal(9, 6)
-  longitude      Decimal?       @db.Decimal(9, 6)
-  notes          String?
-  status         CustomerStatus @default(ACTIVE)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  deletedAt      DateTime?
-
-  organization         Organization          @relation(fields: [organizationId], references: [id])
-  generator            Generator             @relation(fields: [generatorId], references: [id])
-  subscriptions        Subscription[]
-  bills                Bill[]
-  payments             Payment[]
-  collectorAssignments CollectorAssignment[]
-  notifications        Notification[]
-
-  @@unique([generatorId, customerNumber])
-  @@index([generatorId, status])
-  @@index([generatorId, fullName])
-  @@index([generatorId, phonePrimary])
-  @@index([organizationId])
-  @@map("customers")
-}
-
+// أسعار الأمبيرات (Database-driven, لكل Workspace)
 model AmperePlan {
-  id             String       @id @default(uuid())
-  organizationId String
-  generatorId    String
-  name           String
-  ampereAmount   Decimal      @db.Decimal(8, 2)
-  price          Decimal      @db.Decimal(18, 3)
-  currency       String       @default("IQD")
-  billingCycle   BillingCycle @default(MONTHLY)
-  effectiveFrom  DateTime
-  effectiveTo    DateTime?
-  status         PlanStatus   @default(ACTIVE)
-  description    String?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id           String   @id @default(uuid()) @db.Uuid
+  workspaceId  String   @db.Uuid
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  amperes      Int
+  monthlyPrice Decimal  @db.Decimal(14, 2)
+  isCustom     Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
 
-  organization  Organization   @relation(fields: [organizationId], references: [id])
-  generator     Generator      @relation(fields: [generatorId], references: [id])
-  subscriptions Subscription[]
+  subscriptions CustomerSubscription[]
 
-  @@index([generatorId, status, effectiveFrom])
-  @@index([organizationId])
+  @@unique([workspaceId, amperes, isCustom])
+  @@index([workspaceId])
   @@map("ampere_plans")
 }
 
-model Subscription {
-  id                 String             @id @default(uuid())
-  organizationId     String
-  customerId         String
-  generatorId        String
-  amperePlanId       String
-  startDate          DateTime
-  endDate            DateTime?
-  status             SubscriptionStatus @default(PENDING)
-  billingCycle       BillingCycle       @default(MONTHLY)
-  customPrice        Decimal?           @db.Decimal(18, 3)
-  customAmpere       Decimal?           @db.Decimal(8, 2)
-  discountType       DiscountType?
-  discountValue      Decimal?           @db.Decimal(18, 3)
-  billingDay         Int?
-  notes              String?
-  cancelledAt        DateTime?
-  cancellationReason String?
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+enum CustomerStatus {
+  ACTIVE
+  OVERDUE
+  SUSPENDED
+  DISCONNECTED
+}
 
-  organization Organization @relation(fields: [organizationId], references: [id])
-  customer     Customer     @relation(fields: [customerId], references: [id])
-  generator    Generator    @relation(fields: [generatorId], references: [id])
-  amperePlan   AmperePlan   @relation(fields: [amperePlanId], references: [id])
-  bills        Bill[]
+model Customer {
+  id               String         @id @default(uuid()) @db.Uuid
+  workspaceId      String         @db.Uuid
+  workspace        Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  generatorId      String         @db.Uuid
+  generator        Generator      @relation(fields: [generatorId], references: [id])
+  subscriberNumber String
+  name             String
+  phone            String?
+  region           String?
+  neighborhood     String?
+  alley            String?
+  houseNumber      String?
+  notes            String?
+  status           CustomerStatus @default(ACTIVE)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  deletedAt        DateTime?
 
-  @@index([organizationId, status])
-  @@index([generatorId, status])
+  subscriptions  CustomerSubscription[]
+  ampereHistory  CustomerAmpereHistory[]
+  invoices       Invoice[]
+  payments       Payment[]
+  collectorAssignments CollectorAssignment[]
+
+  @@unique([workspaceId, subscriberNumber])
+  @@index([workspaceId, status])
+  @@index([workspaceId, name])
+  @@map("customers")
+}
+
+model CustomerAmpereHistory {
+  id            String   @id @default(uuid()) @db.Uuid
+  customerId    String   @db.Uuid
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  oldAmperes    Int?
+  newAmperes    Int
+  effectiveDate DateTime
+  oldPrice      Decimal? @db.Decimal(14, 2)
+  newPrice      Decimal  @db.Decimal(14, 2)
+  reason        String?
+  changedByUserId String @db.Uuid
+  createdAt     DateTime @default(now())
+
   @@index([customerId])
-  @@map("subscriptions")
+  @@map("customer_ampere_history")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PENDING
+  OVERDUE
+  SUSPENDED
+  CANCELLED
+  EXPIRED
+}
+
+model CustomerSubscription {
+  id           String             @id @default(uuid()) @db.Uuid
+  customerId   String             @db.Uuid
+  customer     Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  amperePlanId String             @db.Uuid
+  amperePlan   AmperePlan         @relation(fields: [amperePlanId], references: [id])
+  amperes      Int
+  price        Decimal            @db.Decimal(14, 2)
+  startDate    DateTime
+  endDate      DateTime?
+  status       SubscriptionStatus @default(ACTIVE)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  invoices Invoice[]
+
+  @@index([customerId, status])
+  @@map("customer_subscriptions")
 }
 
 // ============================================================
-// BILLING
+// Financial: Invoices / Payments / Ledger
 // ============================================================
 
-model Bill {
-  id                  String     @id @default(uuid())
-  organizationId      String
-  generatorId         String
-  customerId          String
-  subscriptionId      String
-  billNumber          String
-  billingPeriodStart  DateTime
-  billingPeriodEnd    DateTime
-  issueDate           DateTime
-  dueDate             DateTime
-  currency            String     @default("IQD")
-  subtotal            Decimal    @db.Decimal(18, 3)
-  discountAmount      Decimal    @default(0) @db.Decimal(18, 3)
-  penaltyAmount       Decimal    @default(0) @db.Decimal(18, 3)
-  previousDebt        Decimal    @default(0) @db.Decimal(18, 3)
-  creditApplied       Decimal    @default(0) @db.Decimal(18, 3)
-  totalAmount         Decimal    @db.Decimal(18, 3)
-  paidAmount          Decimal    @default(0) @db.Decimal(18, 3)
-  outstandingAmount   Decimal    @db.Decimal(18, 3)
-  status              BillStatus @default(DRAFT)
-  calculationSnapshot Json
-  notes               String?
-  createdBy           String?
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
-  voidedAt            DateTime?
-  voidedBy            String?
-  voidReason          String?
-
-  organization  Organization         @relation(fields: [organizationId], references: [id])
-  generator     Generator            @relation(fields: [generatorId], references: [id])
-  customer      Customer             @relation(fields: [customerId], references: [id])
-  subscription  Subscription         @relation(fields: [subscriptionId], references: [id])
-  creator       User?                @relation("BillCreator", fields: [createdBy], references: [id], onDelete: SetNull)
-  voider        User?                @relation("BillVoider", fields: [voidedBy], references: [id], onDelete: SetNull)
-  payments      Payment[]
-  adjustments   BillAdjustment[]
-  receipts      Receipt[]
-  allocations   PaymentAllocation[]
-
-  @@unique([organizationId, billNumber])
-  @@unique([subscriptionId, billingPeriodStart, billingPeriodEnd])
-  @@index([organizationId, status])
-  @@index([generatorId, status])
-  @@index([customerId])
-  @@index([dueDate])
-  @@index([organizationId, billingPeriodStart])
-  @@index([organizationId, status, dueDate])
-  @@map("bills")
+enum InvoiceStatus {
+  PAID
+  PARTIALLY_PAID
+  UNPAID
+  OVERDUE
 }
 
-model BillAdjustment {
-  id             String           @id @default(uuid())
-  organizationId String
-  billId         String
-  type           AdjustmentType
-  amount         Decimal          @db.Decimal(18, 3)
-  reason         String
-  status         AdjustmentStatus @default(PENDING)
-  createdBy      String
-  approvedBy     String?
-  createdAt      DateTime         @default(now())
+model Invoice {
+  id             String                @id @default(uuid()) @db.Uuid
+  workspaceId    String                @db.Uuid
+  workspace      Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  customerId     String                @db.Uuid
+  customer       Customer              @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  subscriptionId String                @db.Uuid
+  subscription   CustomerSubscription  @relation(fields: [subscriptionId], references: [id])
+  periodStart    DateTime
+  periodEnd      DateTime
+  amount         Decimal               @db.Decimal(14, 2)
+  paidAmount     Decimal               @default(0) @db.Decimal(14, 2)
+  status         InvoiceStatus         @default(UNPAID)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
 
-  organization Organization @relation(fields: [organizationId], references: [id])
-  bill         Bill         @relation(fields: [billId], references: [id])
+  payments Payment[]
 
-  @@index([billId])
-  @@map("bill_adjustments")
+  // يمنع إنشاء فاتورة مكررة لنفس المشترك ونفس فترة الفوترة (Idempotency)
+  @@unique([customerId, periodStart, periodEnd])
+  @@index([workspaceId, status])
+  @@map("invoices")
 }
-
-model BillingRun {
-  id             String           @id @default(uuid())
-  organizationId String
-  generatorId    String
-  periodStart    DateTime         @db.Date
-  periodEnd      DateTime         @db.Date
-  status         BillingRunStatus @default(PENDING)
-  totalBills     Int              @default(0)
-  createdBills   Int              @default(0)
-  failedBills    Int              @default(0)
-  totalAmount    Decimal          @default(0) @db.Decimal(18, 3)
-  idempotencyKey String
-  initiatedBy    String
-  startedAt      DateTime?
-  completedAt    DateTime?
-  error          String?
-  createdAt      DateTime         @default(now())
-
-  organization Organization @relation(fields: [organizationId], references: [id])
-  generator    Generator    @relation(fields: [generatorId], references: [id])
-  initiator    User         @relation(fields: [initiatedBy], references: [id])
-
-  @@unique([organizationId, idempotencyKey])
-  @@unique([generatorId, periodStart, periodEnd])
-  @@map("billing_runs")
-}
-
-// ============================================================
-// PAYMENTS & COLLECTION
-// ============================================================
 
 model Payment {
-  id                   String        @id @default(uuid())
-  organizationId       String
-  generatorId          String
-  customerId           String
-  billId               String?
-  sessionId            String?
-  paymentNumber        String
-  amount               Decimal       @db.Decimal(18, 3)
-  currency             String        @default("IQD")
-  paymentMethod        PaymentMethod @default(CASH)
-  paymentDate          DateTime
-  collectorId          String?
-  referenceNumber      String?
-  offlineTransactionId String?
-  status               PaymentStatus @default(COMPLETED)
-  notes                String?
-  createdBy            String?
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
-  reversedAt           DateTime?
-  reversedBy           String?
-  reversalReason       String?
+  id              String   @id @default(uuid()) @db.Uuid
+  workspaceId     String   @db.Uuid
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  customerId      String   @db.Uuid
+  customer        Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  invoiceId       String?  @db.Uuid
+  invoice         Invoice? @relation(fields: [invoiceId], references: [id])
+  amount          Decimal  @db.Decimal(14, 2)
+  date            DateTime @default(now())
+  collectorUserId String?  @db.Uuid
+  method          String   @default("CASH")
+  note            String?
+  createdByUserId String   @db.Uuid
+  createdAt       DateTime @default(now())
 
-  organization  Organization        @relation(fields: [organizationId], references: [id])
-  generator     Generator           @relation(fields: [generatorId], references: [id])
-  customer      Customer            @relation(fields: [customerId], references: [id])
-  bill          Bill?               @relation(fields: [billId], references: [id])
-  session       CollectionSession?  @relation(fields: [sessionId], references: [id])
-  collector     Collector?          @relation(fields: [collectorId], references: [id])
-  creator       User?               @relation("PaymentCreator", fields: [createdBy], references: [id], onDelete: SetNull)
-  reverser      User?               @relation("PaymentReverser", fields: [reversedBy], references: [id], onDelete: SetNull)
-  receipt       Receipt?
-  allocations   PaymentAllocation[]
+  adjustments PaymentAdjustment[]
+  ledgerEntry LedgerEntry?
 
-  @@unique([organizationId, paymentNumber])
-  @@unique([organizationId, offlineTransactionId])
-  @@index([organizationId, paymentDate])
-  @@index([generatorId, paymentDate])
+  @@index([workspaceId, date])
   @@index([customerId])
-  @@index([collectorId])
-  @@index([billId])
-  @@index([organizationId, status, paymentDate])
   @@map("payments")
 }
 
-model PaymentAllocation {
-  id        String   @id @default(uuid())
-  paymentId String
-  billId    String
-  amount    Decimal  @db.Decimal(18, 3)
-  createdAt DateTime @default(now())
+// لا يُحذف Payment مطلقًا — أي تصحيح يتم عبر Adjustment
+model PaymentAdjustment {
+  id            String   @id @default(uuid()) @db.Uuid
+  paymentId     String   @db.Uuid
+  payment       Payment  @relation(fields: [paymentId], references: [id])
+  amount        Decimal  @db.Decimal(14, 2)
+  reason        String
+  actorUserId   String   @db.Uuid
+  createdAt     DateTime @default(now())
 
-  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-  bill    Bill    @relation(fields: [billId], references: [id])
-
-  @@unique([paymentId, billId])
-  @@index([billId])
-  @@map("payment_allocations")
+  @@map("payment_adjustments")
 }
 
-model Receipt {
-  id               String    @id @default(uuid())
-  organizationId   String
-  paymentId        String    @unique
-  billId           String?
-  receiptNumber    String
-  amount           Decimal   @db.Decimal(18, 3)
-  currency         String    @default("IQD")
-  previousBalance  Decimal   @db.Decimal(18, 3)
-  remainingBalance Decimal   @db.Decimal(18, 3)
-  issuedAt         DateTime  @default(now())
-  pdfKey           String?
-  reversedAt       DateTime?
-  createdAt        DateTime  @default(now())
+model FinancialPeriod {
+  id           String    @id @default(uuid()) @db.Uuid
+  workspaceId  String    @db.Uuid
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  year         Int
+  month        Int
+  status       String    @default("OPEN") // OPEN | CLOSED
+  closedByUserId String? @db.Uuid
+  closedAt     DateTime?
+  createdAt    DateTime  @default(now())
 
-  organization Organization @relation(fields: [organizationId], references: [id])
-  payment      Payment      @relation(fields: [paymentId], references: [id])
-  bill         Bill?        @relation(fields: [billId], references: [id])
-
-  @@unique([organizationId, receiptNumber])
-  @@map("receipts")
+  @@unique([workspaceId, year, month])
+  @@map("financial_periods")
 }
 
-model Collector {
-  id             String     @id @default(uuid())
-  organizationId String
-  userId         String?    @unique
-  name           String
-  phone          String?
-  employeeCode   String?
-  status         UserStatus @default(ACTIVE)
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
-
-  organization Organization          @relation(fields: [organizationId], references: [id])
-  user         User?                 @relation(fields: [userId], references: [id])
-  assignments  CollectorAssignment[]
-  payments     Payment[]
-  sessions     CollectionSession[]
-
-  @@index([organizationId])
-  @@map("collectors")
+enum LedgerDirection {
+  CREDIT
+  DEBIT
 }
+
+// سجل مالي غير قابل للتعديل — كل حركة مالية تُسجَّل هنا
+model LedgerEntry {
+  id          String          @id @default(uuid()) @db.Uuid
+  workspaceId String          @db.Uuid
+  workspace   Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  type        String          // PAYMENT | ADJUSTMENT | EXPENSE | FUEL | ...
+  direction   LedgerDirection
+  referenceId String
+  paymentId   String?         @unique @db.Uuid
+  payment     Payment?        @relation(fields: [paymentId], references: [id])
+  amount      Decimal         @db.Decimal(14, 2)
+  description String?
+  createdAt   DateTime        @default(now())
+
+  @@index([workspaceId, type])
+  @@map("ledger_entries")
+}
+
+// ============================================================
+// Collectors
+// ============================================================
 
 model CollectorAssignment {
-  id             String           @id @default(uuid())
-  organizationId String
-  collectorId    String
-  generatorId    String
-  customerId     String
-  assignedFrom   DateTime         @default(now())
-  assignedTo     DateTime?
-  status         AssignmentStatus @default(ACTIVE)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  id              String    @id @default(uuid()) @db.Uuid
+  workspaceId     String    @db.Uuid
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  collectorUserId String    @db.Uuid
+  collector       User      @relation("CollectorAssignmentCollector", fields: [collectorUserId], references: [id])
+  customerId      String    @db.Uuid
+  customer        Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  assignedAt      DateTime  @default(now())
+  unassignedAt    DateTime?
 
-  organization Organization @relation(fields: [organizationId], references: [id])
-  collector    Collector    @relation(fields: [collectorId], references: [id], onDelete: Cascade)
-  generator    Generator    @relation(fields: [generatorId], references: [id])
-  customer     Customer     @relation(fields: [customerId], references: [id])
-
-  @@index([collectorId, generatorId, status])
-  @@index([customerId])
+  @@index([workspaceId, collectorUserId])
   @@map("collector_assignments")
 }
 
-model CollectionSession {
-  id              String        @id @default(uuid())
-  organizationId  String
-  collectorId     String
-  generatorId     String
-  sessionDate     DateTime      @db.Date
-  openingBalance  Decimal?      @db.Decimal(18, 3)
-  expectedAmount  Decimal       @default(0) @db.Decimal(18, 3)
-  collectedAmount Decimal       @default(0) @db.Decimal(18, 3)
-  cashSubmitted   Decimal?      @db.Decimal(18, 3)
-  difference      Decimal?      @db.Decimal(18, 3)
-  status          SessionStatus @default(OPEN)
-  openedAt        DateTime      @default(now())
-  closedAt        DateTime?
-  closedBy        String?
-  approvedBy      String?
+enum SettlementStatus {
+  PENDING
+  COMPLETED
+  DISPUTED
+}
+
+model CollectorSettlement {
+  id              String           @id @default(uuid()) @db.Uuid
+  workspaceId     String           @db.Uuid
+  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  collectorUserId String           @db.Uuid
+  periodStart     DateTime
+  periodEnd       DateTime
+  expectedAmount  Decimal          @db.Decimal(14, 2)
+  actualAmount    Decimal          @db.Decimal(14, 2)
+  difference      Decimal          @db.Decimal(14, 2)
+  status          SettlementStatus @default(PENDING)
+  settledByUserId String?          @db.Uuid
+  settledAt       DateTime?
   notes           String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  createdAt       DateTime         @default(now())
 
-  organization Organization @relation(fields: [organizationId], references: [id])
-  collector    Collector    @relation(fields: [collectorId], references: [id])
-  generator    Generator    @relation(fields: [generatorId], references: [id])
-  payments     Payment[]
-
-  @@unique([collectorId, generatorId, sessionDate])
-  @@index([organizationId, sessionDate])
-  @@index([collectorId, status])
-  @@map("collection_sessions")
+  @@index([workspaceId, collectorUserId])
+  @@map("collector_settlements")
 }
 
 // ============================================================
-// EXPENSES
+// Expenses / Fuel / Maintenance / Operations
 // ============================================================
 
 model ExpenseCategory {
-  id             String   @id @default(uuid())
-  organizationId String
-  name           String
-  nameAr         String?
-  isSystem       Boolean  @default(false)
-  createdAt      DateTime @default(now())
+  id          String    @id @default(uuid()) @db.Uuid
+  workspaceId String?   @db.Uuid
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  isSystem    Boolean   @default(false)
 
-  organization Organization @relation(fields: [organizationId], references: [id])
-  expenses     Expense[]
+  expenses Expense[]
 
-  @@unique([organizationId, name])
   @@map("expense_categories")
 }
 
 model Expense {
-  id              String        @id @default(uuid())
-  organizationId  String
-  generatorId     String?
-  categoryId      String
-  amount          Decimal       @db.Decimal(18, 3)
-  currency        String        @default("IQD")
-  expenseDate     DateTime      @db.Date
-  description     String
-  supplierId      String?
-  paymentMethod   PaymentMethod @default(CASH)
-  referenceNumber String?
-  attachmentKey   String?
-  status          ExpenseStatus @default(PENDING)
-  createdBy       String
-  approvedBy      String?
-  approvedAt      DateTime?
-  rejectedReason  String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id              String          @id @default(uuid()) @db.Uuid
+  workspaceId     String          @db.Uuid
+  workspace       Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  categoryId      String          @db.Uuid
+  category        ExpenseCategory @relation(fields: [categoryId], references: [id])
+  amount          Decimal         @db.Decimal(14, 2)
+  date            DateTime
+  vendor          String?
+  note            String?
+  attachmentUrl   String?
+  createdByUserId String          @db.Uuid
+  createdAt       DateTime        @default(now())
 
-  organization Organization    @relation(fields: [organizationId], references: [id])
-  generator    Generator?      @relation(fields: [generatorId], references: [id])
-  category     ExpenseCategory @relation(fields: [categoryId], references: [id])
-  creator      User            @relation("ExpenseCreator", fields: [createdBy], references: [id])
-  approver     User?           @relation("ExpenseApprover", fields: [approvedBy], references: [id], onDelete: SetNull)
-
-  @@index([organizationId, expenseDate])
-  @@index([generatorId])
+  @@index([workspaceId, date])
   @@map("expenses")
 }
 
-// ============================================================
-// FUEL
-// ============================================================
-
-model FuelSupplier {
-  id             String   @id @default(uuid())
-  organizationId String
-  name           String
-  phone          String?
-  notes          String?
-  createdAt      DateTime @default(now())
-
-  organization Organization   @relation(fields: [organizationId], references: [id])
-  purchases    FuelPurchase[]
-
-  @@unique([organizationId, name])
-  @@map("fuel_suppliers")
-}
-
 model FuelPurchase {
-  id             String        @id @default(uuid())
-  organizationId String
-  generatorId    String
-  supplierId     String?
-  quantity       Decimal       @db.Decimal(14, 3)
-  unit           FuelUnit      @default(LITER)
-  unitCost       Decimal       @db.Decimal(18, 3)
-  totalCost      Decimal       @db.Decimal(18, 3)
-  purchaseDate   DateTime      @db.Date
-  invoiceNumber  String?
-  attachmentKey  String?
-  status         ExpenseStatus @default(PENDING)
-  createdBy      String
-  approvedBy     String?
-  approvedAt     DateTime?
-  rejectedReason String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id              String   @id @default(uuid()) @db.Uuid
+  workspaceId     String   @db.Uuid
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  quantityLiters  Decimal  @db.Decimal(10, 2)
+  pricePerLiter   Decimal  @db.Decimal(10, 2)
+  totalCost       Decimal  @db.Decimal(14, 2)
+  supplier        String?
+  date            DateTime
+  createdByUserId String   @db.Uuid
+  createdAt       DateTime @default(now())
 
-  organization Organization  @relation(fields: [organizationId], references: [id])
-  generator    Generator     @relation(fields: [generatorId], references: [id])
-  supplier     FuelSupplier? @relation(fields: [supplierId], references: [id])
-  creator      User          @relation("FuelCreator", fields: [createdBy], references: [id])
-  approver     User?         @relation("FuelApprover", fields: [approvedBy], references: [id], onDelete: SetNull)
-
-  @@index([generatorId, purchaseDate])
+  @@index([workspaceId, date])
   @@map("fuel_purchases")
 }
 
-model FuelInventoryTransaction {
-  id             String            @id @default(uuid())
-  organizationId String
-  generatorId    String
-  type           FuelInventoryType
-  quantity       Decimal           @db.Decimal(14, 3)
-  unit           FuelUnit          @default(LITER)
-  referenceId    String?
-  notes          String?
-  recordedAt     DateTime          @default(now())
-  createdBy      String
-  createdAt      DateTime          @default(now())
+model FuelUsage {
+  id                 String   @id @default(uuid()) @db.Uuid
+  workspaceId        String   @db.Uuid
+  workspace          Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  operatingSessionId String?  @db.Uuid
+  quantityLiters     Decimal  @db.Decimal(10, 2)
+  date               DateTime
+  note               String?
+  createdAt          DateTime @default(now())
 
-  organization Organization @relation(fields: [organizationId], references: [id])
-  generator    Generator    @relation(fields: [generatorId], references: [id])
-
-  @@index([generatorId, recordedAt])
-  @@map("fuel_inventory_transactions")
+  @@index([workspaceId, date])
+  @@map("fuel_usages")
 }
 
-model FuelConsumptionRecord {
-  id             String        @id @default(uuid())
-  organizationId String
-  generatorId    String
-  quantity       Decimal       @db.Decimal(14, 3)
-  unit           FuelUnit      @default(LITER)
-  source         RuntimeSource @default(MANUAL)
-  notes          String?
-  recordedAt     DateTime      @default(now())
-  createdBy      String
-  createdAt      DateTime      @default(now())
+model Equipment {
+  id           String    @id @default(uuid()) @db.Uuid
+  workspaceId  String    @db.Uuid
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  generatorId  String    @db.Uuid
+  generator    Generator @relation(fields: [generatorId], references: [id], onDelete: Cascade)
+  name         String
+  model        String?
+  serialNumber String?
+  installedAt  DateTime?
+  createdAt    DateTime  @default(now())
 
-  organization Organization @relation(fields: [organizationId], references: [id])
-  generator    Generator    @relation(fields: [generatorId], references: [id])
+  maintenanceRecords MaintenanceRecord[]
 
-  @@index([generatorId, recordedAt])
-  @@map("fuel_consumption_records")
-}
-
-// ============================================================
-// OPERATIONS
-// ============================================================
-
-model GeneratorRuntime {
-  id              String        @id @default(uuid())
-  organizationId  String
-  generatorId     String
-  startTime       DateTime
-  endTime         DateTime?
-  durationMinutes Int?
-  source          RuntimeSource @default(MANUAL)
-  notes           String?
-  createdBy       String
-  createdAt       DateTime      @default(now())
-
-  organization Organization @relation(fields: [organizationId], references: [id])
-  generator    Generator    @relation(fields: [generatorId], references: [id])
-
-  @@index([generatorId, startTime])
-  @@map("generator_runtimes")
-}
-
-model GeneratorOutage {
-  id              String     @id @default(uuid())
-  organizationId  String
-  generatorId     String
-  startedAt       DateTime
-  endedAt         DateTime?
-  durationMinutes Int?
-  type            OutageType @default(UNPLANNED)
-  reason          String?
-  description     String?
-  createdBy       String
-  createdAt       DateTime   @default(now())
-
-  organization Organization @relation(fields: [organizationId], references: [id])
-  generator    Generator    @relation(fields: [generatorId], references: [id])
-
-  @@index([generatorId, startedAt])
-  @@map("generator_outages")
+  @@index([workspaceId])
+  @@map("equipment")
 }
 
 model MaintenanceRecord {
-  id                   String            @id @default(uuid())
-  organizationId       String
-  generatorId          String
-  type                 String
-  date                 DateTime          @db.Date
-  description          String
-  technicianId         String?
-  cost                 Decimal?          @db.Decimal(18, 3)
-  nextMaintenanceDate  DateTime?
-  runtimeAtMaintenance Int?
-  status               MaintenanceStatus @default(PLANNED)
-  createdBy            String
-  createdAt            DateTime          @default(now())
-  updatedAt            DateTime          @updatedAt
+  id                  String    @id @default(uuid()) @db.Uuid
+  workspaceId         String    @db.Uuid
+  workspace           Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  equipmentId         String    @db.Uuid
+  equipment           Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  type                String
+  date                DateTime
+  cost                Decimal   @db.Decimal(14, 2)
+  parts               String?
+  technician          String?
+  notes               String?
+  nextMaintenanceDate DateTime?
+  createdAt           DateTime  @default(now())
 
-  organization Organization           @relation(fields: [organizationId], references: [id])
-  generator    Generator              @relation(fields: [generatorId], references: [id])
-  technician   Employee?              @relation(fields: [technicianId], references: [id])
-  parts        MaintenanceSparePart[]
-
-  @@index([generatorId, date])
+  @@index([workspaceId, date])
   @@map("maintenance_records")
 }
 
-model MaintenanceSparePart {
-  id             String   @id @default(uuid())
-  organizationId String
-  maintenanceId  String
-  sparePartId    String
-  quantity       Int
-  unitCost       Decimal? @db.Decimal(18, 3)
-  createdAt      DateTime @default(now())
+model OperatingSession {
+  id              String    @id @default(uuid()) @db.Uuid
+  workspaceId     String    @db.Uuid
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  generatorId     String    @db.Uuid
+  generator       Generator @relation(fields: [generatorId], references: [id], onDelete: Cascade)
+  startTime       DateTime
+  endTime         DateTime?
+  operatingHours  Decimal?  @db.Decimal(8, 2)
+  downtimeMinutes Int       @default(0)
+  downtimeReason  String?
+  createdAt       DateTime  @default(now())
 
-  maintenance MaintenanceRecord @relation(fields: [maintenanceId], references: [id], onDelete: Cascade)
-  sparePart   SparePart         @relation(fields: [sparePartId], references: [id])
-
-  @@unique([maintenanceId, sparePartId])
-  @@index([sparePartId])
-  @@map("maintenance_spare_parts")
-}
-
-model SparePart {
-  id             String   @id @default(uuid())
-  organizationId String
-  name           String
-  quantity       Int      @default(0)
-  unitCost       Decimal? @db.Decimal(18, 3)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  organization Organization           @relation(fields: [organizationId], references: [id])
-  usages       MaintenanceSparePart[]
-
-  @@map("spare_parts")
-}
-
-model TechnicianActivity {
-  id             String   @id @default(uuid())
-  organizationId String
-  generatorId    String
-  technicianId   String?
-  activityType   String
-  description    String
-  performedAt    DateTime @default(now())
-  createdAt      DateTime @default(now())
-
-  organization Organization @relation(fields: [organizationId], references: [id])
-
-  @@map("technician_activities")
-}
-
-model OilChange {
-  id             String   @id @default(uuid())
-  organizationId String
-  generatorId    String
-  date           DateTime @db.Date
-  runtimeHours   Int?
-  notes          String?
-  createdBy      String
-  createdAt      DateTime @default(now())
-
-  organization Organization @relation(fields: [organizationId], references: [id])
-  generator    Generator    @relation(fields: [generatorId], references: [id])
-
-  @@map("oil_changes")
+  @@index([workspaceId, startTime])
+  @@map("operating_sessions")
 }
 
 // ============================================================
-// EMPLOYEES
-// ============================================================
-
-model Employee {
-  id               String         @id @default(uuid())
-  organizationId   String
-  generatorId      String?
-  userId           String?        @unique
-  name             String
-  phone            String?
-  role             String
-  employeeCode     String
-  salary           Decimal?       @db.Decimal(18, 3)
-  status           EmployeeStatus @default(ACTIVE)
-  hireDate         DateTime?      @db.Date
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-
-  organization       Organization        @relation(fields: [organizationId], references: [id])
-  generator          Generator?          @relation(fields: [generatorId], references: [id])
-  user               User?               @relation(fields: [userId], references: [id])
-  maintenanceRecords MaintenanceRecord[]
-
-  @@unique([organizationId, employeeCode])
-  @@map("employees")
-}
-
-// ============================================================
-// NOTIFICATIONS
+// Notifications / Audit
 // ============================================================
 
 model Notification {
-  id                String              @id @default(uuid())
-  organizationId    String
-  recipientUserId   String?
-  customerId        String?
-  type              NotificationType
-  channel           NotificationChannel @default(IN_APP)
-  title             String
-  body              String
-  payload           Json?
-  status            NotificationStatus  @default(QUEUED)
-  providerMessageId String?
-  error             String?
-  attempts          Int                 @default(0)
-  sentAt            DateTime?
-  readAt            DateTime?
-  createdAt         DateTime            @default(now())
+  id          String    @id @default(uuid()) @db.Uuid
+  workspaceId String    @db.Uuid
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String?   @db.Uuid
+  user        User?     @relation(fields: [userId], references: [id])
+  type        String
+  title       String
+  body        String
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
 
-  organization Organization @relation(fields: [organizationId], references: [id])
-  recipient    User?        @relation("NotificationRecipient", fields: [recipientUserId], references: [id], onDelete: Cascade)
-  customer     Customer?    @relation(fields: [customerId], references: [id])
-
-  @@index([organizationId, status])
-  @@index([recipientUserId, readAt])
-  @@index([organizationId, createdAt])
+  @@index([workspaceId, userId, readAt])
   @@map("notifications")
 }
 
-model NotificationPreference {
-  id              String   @id @default(uuid())
-  organizationId  String
-  customerId      String?  @unique
-  userId          String?  @unique
-  smsEnabled      Boolean  @default(false)
-  whatsappEnabled Boolean  @default(false)
-  emailEnabled    Boolean  @default(false)
-  inAppEnabled    Boolean  @default(true)
-  updatedAt       DateTime @updatedAt
-
-  @@map("notification_preferences")
-}
-
-// ============================================================
-// AUDIT
-// ============================================================
-
 model AuditLog {
-  id             String   @id @default(uuid())
-  organizationId String?
-  actorUserId    String?
-  action         String
-  entityType     String
-  entityId       String?
-  before         Json?
-  after          Json?
-  metadata       Json?
-  ipAddress      String?
-  userAgent      String?
-  requestId      String?
-  createdAt      DateTime @default(now())
+  id          String    @id @default(uuid()) @db.Uuid
+  workspaceId String?   @db.Uuid
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id])
+  actorUserId String?   @db.Uuid
+  actor       User?     @relation(fields: [actorUserId], references: [id])
+  action      String
+  entity      String
+  entityId    String?
+  before      Json?
+  after       Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
 
-  organization Organization? @relation(fields: [organizationId], references: [id])
-  actor        User?         @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
-
-  @@index([organizationId, createdAt])
-  @@index([entityType, entityId])
-  @@index([actorUserId])
-  @@index([organizationId, entityType, createdAt])
+  @@index([workspaceId, createdAt])
+  @@index([entity, entityId])
   @@map("audit_logs")
 }
 
 // ============================================================
-// OFFLINE SYNC & INFRA
+// Platform: Features / Plans / Usage / Billing (Phase 5)
 // ============================================================
 
-model SyncTransaction {
-  id                  String     @id @default(uuid())
-  organizationId      String
-  userId              String
-  deviceId            String
-  clientTransactionId String
-  entityType          String
-  payload             Json
-  status              SyncStatus @default(PENDING)
-  serverEntityId      String?
-  error               String?
-  attempts            Int        @default(0)
-  syncedAt            DateTime?
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
+model Feature {
+  key         String        @id
+  name        String
+  description String?
+  planFeatures PlanFeature[]
+  overrides    WorkspaceFeatureOverride[]
 
-  organization Organization @relation(fields: [organizationId], references: [id])
-  user         User         @relation(fields: [userId], references: [id])
-
-  @@unique([organizationId, clientTransactionId])
-  @@index([userId, status])
-  @@map("sync_transactions")
+  @@map("features")
 }
 
-model IdempotencyRecord {
-  id             String   @id @default(uuid())
-  organizationId String
-  key            String
-  entityType     String
-  entityId       String
-  response       Json?
-  createdAt      DateTime @default(now())
-  expiresAt      DateTime
+model PlatformPlan {
+  id              String   @id @default(uuid()) @db.Uuid
+  name            String
+  slug            String   @unique
+  price           Decimal  @db.Decimal(14, 2)
+  currency        String   @default("IQD")
+  billingCycle    String   @default("MONTHLY")
+  customerLimit   Int?
+  userLimit       Int?
+  collectorLimit  Int?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
 
-  organization Organization @relation(fields: [organizationId], references: [id])
+  features      PlanFeature[]
+  subscriptions PlatformSubscription[]
 
-  @@unique([organizationId, key])
-  @@map("idempotency_records")
+  @@map("platform_plans")
 }
 
-model DocumentSequence {
-  id             String @id @default(uuid())
-  organizationId String
-  kind           String
-  year           Int
-  lastValue      BigInt @default(0)
+model PlanFeature {
+  planId     String       @db.Uuid
+  plan       PlatformPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  featureKey String
+  feature    Feature      @relation(fields: [featureKey], references: [key], onDelete: Cascade)
+  enabled    Boolean      @default(true)
 
-  organization Organization @relation(fields: [organizationId], references: [id])
-
-  @@unique([organizationId, kind, year])
-  @@map("document_sequences")
+  @@id([planId, featureKey])
+  @@map("plan_features")
 }
 
-model StoredFile {
-  id             String   @id @default(uuid())
-  organizationId String
-  entityKind     String
-  entityId       String?
-  mimeType       String
-  extension      String
-  sizeBytes      BigInt
-  objectKey      String   @unique
-  originalName   String?
-  uploadedBy     String?
-  createdAt      DateTime @default(now())
+model WorkspaceFeatureOverride {
+  workspaceId String    @db.Uuid
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  featureKey  String
+  feature     Feature   @relation(fields: [featureKey], references: [key], onDelete: Cascade)
+  enabled     Boolean
+  reason      String?
+  createdAt   DateTime  @default(now())
 
-  organization Organization @relation(fields: [organizationId], references: [id])
-
-  @@index([organizationId, entityKind, entityId])
-  @@map("stored_files")
+  @@id([workspaceId, featureKey])
+  @@map("workspace_feature_overrides")
 }
 
-model OrganizationSetting {
-  id             String   @id @default(uuid())
-  organizationId String
-  key            String
-  value          Json
-  updatedBy      String?
-  updatedAt      DateTime @updatedAt
+model Usage {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @db.Uuid
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  metric      String   // customers | users | collectors | storage_mb | ai_requests | reports
+  value       Int
+  periodStart DateTime
+  periodEnd   DateTime
+  createdAt   DateTime @default(now())
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  @@unique([workspaceId, metric, periodStart, periodEnd])
+  @@map("usage_records")
+}
 
-  @@unique([organizationId, key])
-  @@map("organization_settings")
+enum PlatformSubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  SUSPENDED
+  CANCELLED
+  EXPIRED
+}
+
+model PlatformSubscription {
+  id           String                      @id @default(uuid()) @db.Uuid
+  workspaceId  String                      @unique @db.Uuid
+  workspace    Workspace                   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  planId       String                      @db.Uuid
+  plan         PlatformPlan                @relation(fields: [planId], references: [id])
+  status       PlatformSubscriptionStatus  @default(TRIAL)
+  trialStart   DateTime?
+  trialEnd     DateTime?
+  startDate    DateTime                    @default(now())
+  endDate      DateTime?
+  price        Decimal                     @db.Decimal(14, 2)
+  currency     String                      @default("IQD")
+  autoRenew    Boolean                     @default(true)
+  notes        String?
+  createdAt    DateTime                    @default(now())
+  updatedAt    DateTime                    @updatedAt
+
+  transactions BillingTransaction[]
+
+  @@map("platform_subscriptions")
+}
+
+model BillingTransaction {
+  id                      String                @id @default(uuid()) @db.Uuid
+  platformSubscriptionId  String                @db.Uuid
+  platformSubscription    PlatformSubscription  @relation(fields: [platformSubscriptionId], references: [id], onDelete: Cascade)
+  amount                  Decimal               @db.Decimal(14, 2)
+  currency                String                @default("IQD")
+  type                    String                // CHARGE | CREDIT | REFUND | MANUAL_ADJUSTMENT
+  provider                String                @default("MANUAL")
+  note                    String?
+  createdAt               DateTime              @default(now())
+
+  @@map("billing_transactions")
 }
 
 // ============================================================
-// EXPORT
+// Support (Phase 6)
 // ============================================================
 
-model ExportJob {
-  id             String          @id @default(uuid())
-  organizationId String
-  userId         String
-  reportKey      String
-  format         String
-  params         Json
-  status         ExportJobStatus @default(PENDING)
-  fileId         String?
-  rowCount       Int             @default(0)
-  error          String?
-  requestedAt    DateTime        @default(now())
-  completedAt    DateTime?
-  expiresAt      DateTime
+enum SupportTicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_FOR_USER
+  RESOLVED
+  CLOSED
+}
 
-  organization Organization @relation(fields: [organizationId], references: [id])
+model SupportTicket {
+  id          String              @id @default(uuid()) @db.Uuid
+  workspaceId String              @db.Uuid
+  workspace   Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdByUserId String          @db.Uuid
+  createdBy   User                @relation(fields: [createdByUserId], references: [id])
+  category    String
+  subject     String
+  description String
+  status      SupportTicketStatus @default(OPEN)
+  priority    String              @default("NORMAL")
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
 
-  @@index([organizationId, requestedAt])
-  @@map("export_jobs")
+  messages    SupportMessage[]
+
+  @@index([workspaceId, status])
+  @@map("support_tickets")
+}
+
+model SupportMessage {
+  id              String         @id @default(uuid()) @db.Uuid
+  ticketId        String         @db.Uuid
+  ticket          SupportTicket  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorUserId    String         @db.Uuid
+  author          User           @relation(fields: [authorUserId], references: [id])
+  body            String
+  isInternalNote  Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+
+  attachments SupportAttachment[]
+
+  @@map("support_messages")
+}
+
+model SupportAttachment {
+  id        String         @id @default(uuid()) @db.Uuid
+  messageId String         @db.Uuid
+  message   SupportMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  fileUrl   String
+  fileName  String
+  fileSize  Int
+  mimeType  String
+  createdAt DateTime       @default(now())
+
+  @@map("support_attachments")
 }
 
 // ============================================================
-// SAAS PLATFORM
+// AI Assistant (Phase 7) — Workspace-scoped, بيانات مُحوسبة فقط، بدون وصول مباشر لقاعدة البيانات
 // ============================================================
 
-model SaasPlan {
-  id        String   @id @default(uuid())
-  code      String   @unique
-  name      String
-  nameAr    String?
-  limits    Json?
-  createdAt DateTime @default(now())
-
-  subscriptions OrganizationSubscription[]
-
-  @@map("saas_plans")
+enum AIMessageRole {
+  USER
+  ASSISTANT
 }
 
-model OrganizationSubscription {
-  id             String                @id @default(uuid())
-  organizationId String                @unique
-  planId         String
-  status         OrgSubscriptionStatus @default(ACTIVE)
-  startedAt      DateTime              @default(now())
-  expiresAt      DateTime?
+model AIConversation {
+  id          String    @id @default(uuid()) @db.Uuid
+  workspaceId String    @db.Uuid
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String    @db.Uuid
+  title       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  plan         SaasPlan     @relation(fields: [planId], references: [id])
+  messages AIMessage[]
 
-  @@map("organization_subscriptions")
+  @@index([workspaceId, userId])
+  @@map("ai_conversations")
 }
 
-model UsageMetric {
-  id             String   @id @default(uuid())
-  organizationId String
-  metric         String
-  value          Int
-  recordedAt     DateTime @default(now())
+model AIMessage {
+  id             String         @id @default(uuid()) @db.Uuid
+  conversationId String         @db.Uuid
+  conversation   AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           AIMessageRole
+  content        String
+  createdAt      DateTime       @default(now())
 
-  organization Organization @relation(fields: [organizationId], references: [id])
+  @@index([conversationId])
+  @@map("ai_messages")
+}
 
-  @@index([organizationId, metric, recordedAt])
-  @@map("usage_metrics")
+model AdminImpersonation {
+  id          String    @id @default(uuid()) @db.Uuid
+  adminUserId String    @db.Uuid
+  admin       User      @relation("ImpersonationAdmin", fields: [adminUserId], references: [id])
+  workspaceId String    @db.Uuid
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  startedAt   DateTime  @default(now())
+  endedAt     DateTime?
+  reason      String?
+
+  @@index([workspaceId])
+  @@map("admin_impersonations")
 }
