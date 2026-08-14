@@ -4,11 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import type { NavItem } from "@/lib/navigation";
+import { NAV_ICON_MAP } from "./nav-icons";
 
 export function NavLink({ item, className }: { item: NavItem; className?: string }) {
   const pathname = usePathname();
   const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-  const Icon = item.icon;
+  const Icon = NAV_ICON_MAP[item.icon];
 
   return (
     <Link

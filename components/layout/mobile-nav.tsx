@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { NavItem } from "@/lib/navigation";
+import { NAV_ICON_MAP } from "./nav-icons";
 import { Sheet, SheetContent, SheetTitle, SheetClose } from "@/components/ui/sheet";
 
 export function MobileNav({ items }: { items: NavItem[] }) {
@@ -19,7 +20,7 @@ export function MobileNav({ items }: { items: NavItem[] }) {
     <nav className="fixed inset-x-0 bottom-0 z-40 flex h-16 items-center justify-around border-t bg-card px-2 lg:hidden">
       {primary.map((item) => {
         const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-        const Icon = item.icon;
+        const Icon = NAV_ICON_MAP[item.icon];
         return (
           <Link
             key={item.href}
@@ -48,7 +49,7 @@ export function MobileNav({ items }: { items: NavItem[] }) {
           <SheetTitle>كل الأقسام</SheetTitle>
           <div className="mt-4 grid grid-cols-3 gap-3">
             {rest.map((item) => {
-              const Icon = item.icon;
+              const Icon = NAV_ICON_MAP[item.icon];
               return (
                 <SheetClose asChild key={item.href}>
                   <Link
