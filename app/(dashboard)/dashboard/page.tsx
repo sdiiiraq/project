@@ -30,39 +30,57 @@ export default async function DashboardPage() {
 
   const canManageGenerator = roleHasPermission(role, "generator.manage");
 
+  const TONES = {
+    primary: "bg-primary/15 text-primary",
+    cyan: "bg-cyan/15 text-cyan",
+    success: "bg-success/15 text-success",
+    warning: "bg-warning/15 text-warning",
+    destructive: "bg-destructive/15 text-destructive",
+  } as const;
+
   const kpis = [
-    { label: "مجموع المشتركين", value: stats.customerCount, icon: Users },
-    { label: "المشتركين الفعالين", value: stats.activeCustomerCount, icon: Users2 },
-    { label: "مجموع الأمبيرات", value: `${stats.totalAmperes} أمبير`, icon: Zap },
+    { label: "مجموع المشتركين", value: String(stats.customerCount), icon: Users, tone: "primary" as const },
+    { label: "المشتركين الفعالين", value: String(stats.activeCustomerCount), icon: Users2, tone: "success" as const },
+    { label: "مجموع الأمبيرات", value: `${stats.totalAmperes} أمبير`, icon: Zap, tone: "warning" as const },
     {
       label: "المطلوب هذا الشهر",
       value: formatMoney(stats.monthDue),
       icon: Wallet,
+      tone: "primary" as const,
       hint: "مجموع فواتير الشهر الحالي لكل المشتركين",
     },
     {
       label: "المحصّل هذا الشهر",
       value: formatMoney(stats.monthCollected),
       icon: TrendingUp,
+      tone: "success" as const,
       hint: "المبلغ الذي تم استلامه فعليًا هذا الشهر",
     },
     {
       label: "المتبقي الكلي",
       value: formatMoney(stats.totalOutstanding),
       icon: AlertTriangle,
+      tone: "destructive" as const,
       hint: "ديون متأخرة من هذا الشهر وأشهر سابقة لم تُحصّل بعد",
     },
-    { label: "المصروفات هذا الشهر", value: formatMoney(stats.monthExpensesTotal), icon: TrendingDown },
-    { label: "صافي الربح هذا الشهر", value: formatMoney(stats.netProfit), icon: TrendingUp },
+    { label: "المصروفات هذا الشهر", value: formatMoney(stats.monthExpensesTotal), icon: TrendingDown, tone: "destructive" as const },
+    {
+      label: "صافي الربح هذا الشهر",
+      value: formatMoney(stats.netProfit),
+      icon: TrendingUp,
+      tone: stats.netProfit >= 0 ? ("success" as const) : ("destructive" as const),
+    },
   ];
 
   const hasAlerts = stats.overdueCount > 0 || stats.expiredSubscriptionsCount > 0;
 
+  const quickSummary = kpis.slice(0, 5);
+
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-bold">الرئيسية</h1>
-        <p className="text-sm text-muted-foreground">{generator?.name ?? workspace.name}</p>
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">الرئيسية</h1>
+        <p className="text-sm text-muted-foreground">نظرة عامة على {generator?.name ?? workspace.name}</p>
       </div>
 
       <Card className={openSession ? "border-success/30 bg-success/5" : undefined}>
@@ -88,13 +106,15 @@ export default async function DashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map((kpi) => (
           <Card key={kpi.label}>
-            <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground">{kpi.label}</CardTitle>
-              <kpi.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-xl font-bold">{kpi.value}</p>
-              {"hint" in kpi && kpi.hint && <p className="mt-1 text-xs text-muted-foreground">{kpi.hint}</p>}
+            <CardContent className="flex flex-col gap-3 p-4">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-muted-foreground">{kpi.label}</p>
+                <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl", TONES[kpi.tone])}>
+                  <kpi.icon className="h-[18px] w-[18px]" />
+                </div>
+              </div>
+              <p className="text-2xl font-bold tracking-tight">{kpi.value}</p>
+              {"hint" in kpi && kpi.hint && <p className="text-xs text-muted-foreground">{kpi.hint}</p>}
             </CardContent>
           </Card>
         ))}
@@ -146,6 +166,25 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">ملخص سريع</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col divide-y divide-border p-0">
+          {quickSummary.map((kpi) => (
+            <div key={kpi.label} className="flex items-center justify-between gap-3 px-5 py-3">
+              <div className="flex items-center gap-3">
+                <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", TONES[kpi.tone])}>
+                  <kpi.icon className="h-4 w-4" />
+                </div>
+                <p className="text-sm text-muted-foreground">{kpi.label}</p>
+              </div>
+              <p className="text-sm font-semibold">{kpi.value}</p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
       {stats.customerCount === 0 && (
         <Card>

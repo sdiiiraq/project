@@ -17,7 +17,7 @@ export function MobileNav({ items }: { items: NavItem[] }) {
   const rest = items.filter((i) => !primary.includes(i));
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 flex h-16 items-center justify-around border-t bg-card px-2 lg:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 flex h-16 items-center justify-around border-t border-border bg-card/90 px-2 backdrop-blur-md lg:hidden">
       {primary.map((item) => {
         const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
         const Icon = NAV_ICON_MAP[item.icon];
@@ -26,7 +26,7 @@ export function MobileNav({ items }: { items: NavItem[] }) {
             key={item.href}
             href={item.href}
             className={cn(
-              "flex flex-1 flex-col items-center gap-1 py-1.5 text-[11px] font-medium",
+              "flex flex-1 flex-col items-center gap-1 py-1.5 text-[11px] font-medium transition-colors",
               isActive ? "text-primary" : "text-muted-foreground",
             )}
           >
@@ -54,7 +54,7 @@ export function MobileNav({ items }: { items: NavItem[] }) {
                 <SheetClose asChild key={item.href}>
                   <Link
                     href={item.href}
-                    className="flex flex-col items-center gap-2 rounded-lg border p-3 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                    className="flex flex-col items-center gap-2 rounded-xl border border-border p-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
                   >
                     <Icon className="h-5 w-5" />
                     {item.label}

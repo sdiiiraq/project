@@ -36,7 +36,7 @@ export function AppShell({
     <div className="flex min-h-svh flex-col">
       {impersonating && <ImpersonationBanner workspaceName={workspaceName} />}
       <div className="flex min-h-0 flex-1">
-        <Sidebar items={items} />
+        <Sidebar items={items} fullName={fullName} email={email} />
         <div className="flex min-w-0 flex-1 flex-col">
           <Header
             workspaceName={workspaceName}

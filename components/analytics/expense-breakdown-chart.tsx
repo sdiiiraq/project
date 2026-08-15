@@ -3,7 +3,16 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { formatMoney } from "@/lib/utils/money";
 
-const COLORS = ["hsl(27 96% 53%)", "hsl(222 30% 40%)", "hsl(142 71% 40%)", "hsl(38 92% 50%)", "hsl(0 72% 55%)", "hsl(220 15% 65%)", "hsl(280 60% 55%)", "hsl(190 70% 45%)", "hsl(340 70% 55%)"];
+const COLORS = [
+  "hsl(var(--primary))",
+  "hsl(var(--cyan))",
+  "hsl(var(--brand-accent))",
+  "hsl(var(--success))",
+  "hsl(var(--destructive))",
+  "hsl(280 60% 60%)",
+  "hsl(340 70% 60%)",
+  "hsl(214 28% 66%)",
+];
 
 export function ExpenseBreakdownChart({ data }: { data: { name: string; value: number }[] }) {
   if (data.length === 0) {
@@ -18,8 +27,18 @@ export function ExpenseBreakdownChart({ data }: { data: { name: string; value: n
             <Cell key={index} fill={COLORS[index % COLORS.length]} />
           ))}
         </Pie>
-        <Tooltip formatter={(value: number) => formatMoney(value)} contentStyle={{ borderRadius: 8, direction: "rtl", fontSize: 13 }} />
-        <Legend wrapperStyle={{ fontSize: 12 }} />
+        <Tooltip
+          formatter={(value: number) => formatMoney(value)}
+          contentStyle={{
+            borderRadius: 12,
+            direction: "rtl",
+            fontSize: 13,
+            background: "hsl(var(--popover))",
+            border: "1px solid hsl(var(--border))",
+            color: "hsl(var(--popover-foreground))",
+          }}
+        />
+        <Legend wrapperStyle={{ fontSize: 12, color: "hsl(var(--muted-foreground))" }} />
       </PieChart>
     </ResponsiveContainer>
   );

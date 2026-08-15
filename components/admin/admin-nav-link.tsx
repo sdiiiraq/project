@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import type { NavItem } from "@/lib/navigation";
-import { NAV_ICON_MAP } from "./nav-icons";
+import type { AdminNavItem } from "@/lib/admin-navigation";
+import { ADMIN_ICON_MAP } from "./admin-icons";
 
-export function NavLink({ item, className }: { item: NavItem; className?: string }) {
+export function AdminNavLink({ item }: { item: AdminNavItem }) {
   const pathname = usePathname();
   const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-  const Icon = NAV_ICON_MAP[item.icon];
+  const Icon = ADMIN_ICON_MAP[item.icon];
 
   return (
     <Link
@@ -19,11 +19,10 @@ export function NavLink({ item, className }: { item: NavItem; className?: string
         isActive
           ? "bg-primary/15 text-primary before:absolute before:inset-y-1.5 before:start-0 before:w-1 before:rounded-full before:bg-primary"
           : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-        className,
       )}
     >
       <Icon className="h-[18px] w-[18px] shrink-0" />
-      <span>{item.label}</span>
+      {item.label}
     </Link>
   );
 }

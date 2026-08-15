@@ -24,20 +24,21 @@ export type NavItem = {
   icon: NavIconName;
   permission?: PermissionKey;
   mobilePriority?: number; // أقل رقم = أولوية أعلى في شريط التنقل السفلي
+  group?: string; // تجميع منطقي للعناصر داخل الشريط الجانبي
 };
 
 export const NAV_ITEMS: NavItem[] = [
-  { href: "/dashboard", label: "الرئيسية", icon: "LayoutDashboard", mobilePriority: 1 },
-  { href: "/customers", label: "المشتركين", icon: "Users", permission: "customers.read", mobilePriority: 2 },
-  { href: "/collections", label: "الجباية", icon: "Wallet", permission: "payments.read" },
-  { href: "/subscriptions", label: "الاشتراكات", icon: "FileText", permission: "subscriptions.read" },
-  { href: "/collectors", label: "الجباة", icon: "UserCog", permission: "collectors.manage" },
-  { href: "/expenses", label: "المصاريف", icon: "Receipt", permission: "expenses.read" },
-  { href: "/fuel", label: "الوقود", icon: "Fuel", permission: "fuel.read", mobilePriority: 3 },
-  { href: "/maintenance", label: "الصيانة", icon: "Wrench", permission: "maintenance.read", mobilePriority: 4 },
-  { href: "/reports", label: "التقارير", icon: "BarChart3", permission: "reports.read" },
-  { href: "/analytics", label: "التحليلات", icon: "LineChart", permission: "reports.read" },
-  { href: "/assistant", label: "المساعد الذكي", icon: "Sparkles", permission: "reports.read" },
-  { href: "/support", label: "الدعم الفني", icon: "LifeBuoy" },
-  { href: "/settings", label: "الإعدادات", icon: "Settings", permission: "settings.manage" },
+  { href: "/dashboard", label: "الرئيسية", icon: "LayoutDashboard", mobilePriority: 1, group: "عام" },
+  { href: "/customers", label: "المشتركين", icon: "Users", permission: "customers.read", mobilePriority: 2, group: "المشتركين" },
+  { href: "/collections", label: "الجباية", icon: "Wallet", permission: "payments.read", group: "المشتركين" },
+  { href: "/subscriptions", label: "الاشتراكات", icon: "FileText", permission: "subscriptions.read", group: "المشتركين" },
+  { href: "/collectors", label: "الجباة", icon: "UserCog", permission: "collectors.manage", group: "المشتركين" },
+  { href: "/expenses", label: "المصاريف", icon: "Receipt", permission: "expenses.read", group: "التشغيل" },
+  { href: "/fuel", label: "الوقود", icon: "Fuel", permission: "fuel.read", mobilePriority: 3, group: "التشغيل" },
+  { href: "/maintenance", label: "الصيانة", icon: "Wrench", permission: "maintenance.read", mobilePriority: 4, group: "التشغيل" },
+  { href: "/reports", label: "التقارير", icon: "BarChart3", permission: "reports.read", group: "التحليل" },
+  { href: "/analytics", label: "التحليلات", icon: "LineChart", permission: "reports.read", group: "التحليل" },
+  { href: "/assistant", label: "المساعد الذكي", icon: "Sparkles", permission: "reports.read", group: "التحليل" },
+  { href: "/support", label: "الدعم الفني", icon: "LifeBuoy", group: "النظام" },
+  { href: "/settings", label: "الإعدادات", icon: "Settings", permission: "settings.manage", group: "النظام" },
 ];

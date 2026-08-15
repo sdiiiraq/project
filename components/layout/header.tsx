@@ -24,7 +24,7 @@ export async function Header({
   });
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between border-b bg-card px-4 lg:px-6">
+    <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card/70 px-4 backdrop-blur-md lg:px-6">
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold">{workspaceName}</p>
       </div>
@@ -32,7 +32,7 @@ export async function Header({
       <div className="flex items-center gap-2">
         <Link
           href="/notifications"
-          className="relative flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="relative flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
         >
           <Bell className="h-[18px] w-[18px]" />
           {unreadCount > 0 && (
