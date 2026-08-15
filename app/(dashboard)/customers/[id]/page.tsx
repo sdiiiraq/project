@@ -8,6 +8,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CustomerStatusBadge } from "@/components/customers/status-badge";
 import { RecordPaymentDialog } from "@/components/customers/record-payment-dialog";
 import { ChangeAmpereDialog } from "@/components/customers/change-ampere-dialog";
+import { EditCustomerDialog } from "@/components/customers/edit-customer-dialog";
+import { DeleteCustomerDialog } from "@/components/customers/delete-customer-dialog";
 import { formatMoney } from "@/lib/utils/money";
 import { formatDate } from "@/lib/utils/date";
 import { MapPin, Phone, Zap, Tag } from "lucide-react";
@@ -55,6 +57,8 @@ export default async function CustomerProfilePage({ params }: { params: Promise<
 
   const canRecordPayment = roleHasPermission(permissions, "payments.create");
   const canManageSubscription = roleHasPermission(permissions, "subscriptions.manage");
+  const canUpdateCustomer = roleHasPermission(permissions, "customers.update");
+  const canDeleteCustomer = roleHasPermission(permissions, "customers.delete");
 
   return (
     <div className="flex flex-col gap-6">
@@ -77,6 +81,22 @@ export default async function CustomerProfilePage({ params }: { params: Promise<
             />
           )}
           {canRecordPayment && <RecordPaymentDialog customerId={customer.id} outstanding={outstanding} />}
+          {canUpdateCustomer && (
+            <EditCustomerDialog
+              customer={{
+                id: customer.id,
+                name: customer.name,
+                phone: customer.phone ?? undefined,
+                region: customer.region ?? undefined,
+                neighborhood: customer.neighborhood ?? undefined,
+                alley: customer.alley ?? undefined,
+                houseNumber: customer.houseNumber ?? undefined,
+                notes: customer.notes ?? undefined,
+                customerType: customer.customerType,
+              }}
+            />
+          )}
+          {canDeleteCustomer && <DeleteCustomerDialog customerId={customer.id} customerName={customer.name} />}
         </div>
       </div>
 
