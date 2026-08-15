@@ -21,7 +21,7 @@ export default async function AdminDashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-bold">لوحة تحكم المنصة</h1>
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">لوحة تحكم المنصة</h1>
         <p className="text-sm text-muted-foreground">نظرة عامة على جميع مشتركي أمبير</p>
       </div>
 
@@ -33,7 +33,7 @@ export default async function AdminDashboardPage() {
               <kpi.icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <p className="text-xl font-bold">{kpi.value}</p>
+              <p className="text-2xl font-bold tracking-tight md:text-3xl">{kpi.value}</p>
             </CardContent>
           </Card>
         ))}

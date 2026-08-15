@@ -4,6 +4,7 @@ import { requirePermission, roleHasPermission } from "@/lib/rbac/access";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { CustomerStatusBadge } from "@/components/customers/status-badge";
 import { SearchInput } from "@/components/shared/search-input";
 import { Pagination } from "@/components/shared/pagination";
@@ -66,7 +67,7 @@ export default async function CustomersPage({
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold">المشتركين</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">المشتركين</h1>
           <p className="text-sm text-muted-foreground">{total} مشترك</p>
         </div>
         {canCreate && (
@@ -90,45 +91,43 @@ export default async function CustomersPage({
       ) : (
         <>
           {/* Desktop: جدول كامل */}
-          <Card className="hidden overflow-hidden lg:block">
-            <table className="w-full text-sm">
-              <thead className="border-b bg-muted/40 text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3 text-start font-medium">المشترك</th>
-                  <th className="px-4 py-3 text-start font-medium">الأمبير</th>
-                  <th className="px-4 py-3 text-start font-medium">المنطقة</th>
-                  <th className="px-4 py-3 text-start font-medium">المتبقي</th>
-                  <th className="px-4 py-3 text-start font-medium">الحالة</th>
-                  <th className="px-4 py-3"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
+          <div className="hidden lg:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>المشترك</TableHead>
+                  <TableHead>الأمبير</TableHead>
+                  <TableHead>المنطقة</TableHead>
+                  <TableHead>المتبقي</TableHead>
+                  <TableHead>الحالة</TableHead>
+                  <TableHead />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {customers.map((customer) => (
-                  <tr key={customer.id} className="hover:bg-muted/30">
-                    <td className="px-4 py-3">
+                  <TableRow key={customer.id}>
+                    <TableCell>
                       <p className="font-medium">{customer.name}</p>
                       <p className="text-xs text-muted-foreground">#{customer.subscriberNumber} · {customer.phone}</p>
-                    </td>
-                    <td className="px-4 py-3">{customer.subscriptions[0]?.amperes ?? "—"} أمبير</td>
-                    <td className="px-4 py-3">{customer.region ?? "—"}</td>
-                    <td className="px-4 py-3">
-                      {formatMoney(outstandingMap.get(customer.id) ?? 0)}
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell>{customer.subscriptions[0]?.amperes ?? "—"} أمبير</TableCell>
+                    <TableCell>{customer.region ?? "—"}</TableCell>
+                    <TableCell>{formatMoney(outstandingMap.get(customer.id) ?? 0)}</TableCell>
+                    <TableCell>
                       <CustomerStatusBadge status={customer.status} />
-                    </td>
-                    <td className="px-4 py-3 text-end">
+                    </TableCell>
+                    <TableCell className="text-end">
                       <Button asChild variant="ghost" size="sm">
                         <Link href={`/customers/${customer.id}`}>
                           فتح الملف <ChevronLeft className="h-4 w-4" />
                         </Link>
                       </Button>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </Card>
+              </TableBody>
+            </Table>
+          </div>
 
           {/* Mobile/Tablet: بطاقات */}
           <div className="flex flex-col gap-3 lg:hidden">

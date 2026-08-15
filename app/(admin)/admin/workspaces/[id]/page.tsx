@@ -47,7 +47,7 @@ export default async function AdminWorkspaceDetailPage({ params }: { params: Pro
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold">{workspace.name}</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{workspace.name}</h1>
           <p className="text-sm text-muted-foreground">أُنشئت في {formatDate(workspace.createdAt)}</p>
         </div>
         <div className="flex items-center gap-2">

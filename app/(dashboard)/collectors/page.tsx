@@ -44,7 +44,7 @@ export default async function CollectorsPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold">الجباة</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">الجباة</h1>
           <p className="text-sm text-muted-foreground">{collectors.length} جابي</p>
         </div>
         <AssignCollectorDialog

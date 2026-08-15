@@ -2,6 +2,7 @@ import { requireWorkspace } from "@/lib/auth/session";
 import { requirePermission } from "@/lib/rbac/access";
 import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CustomerCreateForm } from "./customer-create-form";
 
 export default async function NewCustomerPage() {
@@ -14,20 +15,20 @@ export default async function NewCustomerPage() {
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-6">
       <div>
-        <h1 className="text-xl font-bold">إضافة مشترك جديد</h1>
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">إضافة مشترك جديد</h1>
         <p className="text-sm text-muted-foreground">سيتم إنشاء اشتراك فعّال وفاتورة الشهر الحالي تلقائيًا.</p>
       </div>
 
       {pricePerAmpere <= 0 && (
-        <Card className="border-warning/30 bg-warning/5">
-          <CardContent className="p-4 text-sm">
+        <Alert variant="warning">
+          <AlertDescription>
             لم يتم تحديد سعر الأمبير الواحد بعد. اذهب إلى{" "}
-            <a href="/settings" className="text-primary hover:underline">
+            <a href="/settings" className="font-medium text-primary hover:underline">
               الإعدادات
             </a>{" "}
             وحدده أولًا قبل إضافة مشترك.
-          </CardContent>
-        </Card>
+          </AlertDescription>
+        </Alert>
       )}
 
       <Card>

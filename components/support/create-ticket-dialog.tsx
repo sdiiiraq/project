@@ -11,6 +11,7 @@ import { createTicket } from "@/lib/actions/support.actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 
@@ -80,12 +81,7 @@ export function CreateTicketDialog() {
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="description">التفاصيل</Label>
-            <textarea
-              id="description"
-              rows={4}
-              className="flex w-full rounded-lg border border-input bg-background px-3.5 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              {...register("description")}
-            />
+            <Textarea id="description" rows={4} {...register("description")} />
             {errors.description && <p className="text-xs text-destructive">{errors.description.message}</p>}
           </div>
           <div className="flex gap-3">

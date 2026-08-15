@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { replyTicket } from "@/lib/actions/support.actions";
 
 export function ReplyForm({ ticketId }: { ticketId: string }) {
@@ -22,13 +23,7 @@ export function ReplyForm({ ticketId }: { ticketId: string }) {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-2">
-      <textarea
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-        rows={3}
-        placeholder="اكتب ردك هنا..."
-        className="flex w-full rounded-lg border border-input bg-background px-3.5 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      />
+      <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={3} placeholder="اكتب ردك هنا..." />
       <Button type="submit" className="self-end" disabled={loading || !body.trim()}>
         <Send className="h-4 w-4" /> {loading ? "جارٍ الإرسال..." : "إرسال"}
       </Button>

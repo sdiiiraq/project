@@ -48,7 +48,7 @@ export default async function MaintenancePage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold">الصيانة</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">الصيانة</h1>
           <p className="text-sm text-muted-foreground">{equipment.length} معدة مسجّلة</p>
         </div>
         {canOperate && <OperatingSessionControl openSessionId={openSession?.id ?? null} />}

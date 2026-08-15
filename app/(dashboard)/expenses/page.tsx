@@ -31,7 +31,7 @@ export default async function ExpensesPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold">المصاريف</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">المصاريف</h1>
           <p className="text-sm text-muted-foreground">إجمالي آخر 50 سجل: {formatMoney(total)}</p>
         </div>
         {canCreate && <CreateExpenseDialog categories={categories.map((c) => ({ id: c.id, name: c.name }))} />}

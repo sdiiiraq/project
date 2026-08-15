@@ -23,7 +23,7 @@ export default async function AdminWorkspacesPage({ searchParams }: { searchPara
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-bold">المولدات (Workspaces)</h1>
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">المولدات (Workspaces)</h1>
         <p className="text-sm text-muted-foreground">{workspaces.length} مولدة</p>
       </div>
 

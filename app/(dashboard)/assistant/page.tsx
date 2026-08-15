@@ -9,7 +9,7 @@ export default async function AssistantPage() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-xl font-bold">المساعد الذكي</h1>
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">المساعد الذكي</h1>
         <p className="text-sm text-muted-foreground">تحليل بيانات مولدتك فقط — لا ينفذ عمليات مالية</p>
       </div>
 

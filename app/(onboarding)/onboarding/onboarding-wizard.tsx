@@ -236,7 +236,7 @@ function StepDone({ onFinish }: { onFinish: () => void }) {
   return (
     <div className="flex flex-col items-center gap-4 text-center">
       <CheckCircle2 className="h-12 w-12 text-success" />
-      <h2 className="text-xl font-bold">مولدتك جاهزة.</h2>
+      <h2 className="text-2xl font-bold tracking-tight md:text-3xl">مولدتك جاهزة.</h2>
       <p className="text-sm text-muted-foreground">
         تم تجهيز حسابك — ابدأ بإضافة المشتركين وتسجيل الجباية من لوحة التحكم.
       </p>

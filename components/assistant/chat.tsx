@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Sparkles, Send, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { askAI } from "@/lib/actions/ai.actions";
 
@@ -118,11 +119,11 @@ export function AssistantChat({
         }}
         className="mt-3 flex gap-2"
       >
-        <input
+        <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="اكتب سؤالك هنا..."
-          className="flex-1 rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex-1"
         />
         <Button type="submit" disabled={loading || !input.trim()}>
           <Send className="h-4 w-4" />

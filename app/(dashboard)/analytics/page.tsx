@@ -23,7 +23,7 @@ export default async function AnalyticsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-bold">التحليلات</h1>
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">التحليلات</h1>
         <p className="text-sm text-muted-foreground">آخر 6 أشهر</p>
       </div>
 

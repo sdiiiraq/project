@@ -4,6 +4,7 @@ import { roleHasPermission } from "@/lib/rbac/access";
 import { db } from "@/lib/db";
 import { getDashboardStats } from "@/lib/domain/dashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { RevenueTrendChart } from "@/components/dashboard/trend-chart";
 import { CustomerGrowthChart } from "@/components/dashboard/customer-growth-chart";
 import { OperatingSessionControl } from "@/components/maintenance/operating-session-control";
@@ -121,31 +122,30 @@ export default async function DashboardPage() {
       </div>
 
       {hasAlerts && (
-        <Card className="border-warning/30 bg-warning/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm">
-              <AlertTriangle className="h-4 w-4 text-warning" /> تنبيهات
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-2 text-sm">
-            {stats.overdueCount > 0 && (
-              <p>
-                يوجد <span className="font-semibold">{stats.overdueCount}</span> مشترك متأخر عن الدفع —{" "}
-                <Link href="/collections" className="text-primary hover:underline">
-                  عرض الجباية
-                </Link>
-              </p>
-            )}
-            {stats.expiredSubscriptionsCount > 0 && (
-              <p>
-                يوجد <span className="font-semibold">{stats.expiredSubscriptionsCount}</span> اشتراك منتهي يحتاج مراجعة —{" "}
-                <Link href="/subscriptions" className="text-primary hover:underline">
-                  عرض الاشتراكات
-                </Link>
-              </p>
-            )}
-          </CardContent>
-        </Card>
+        <Alert variant="warning">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-warning" />
+          <div className="flex flex-col gap-1.5">
+            <AlertTitle>تنبيهات</AlertTitle>
+            <AlertDescription className="flex flex-col gap-1">
+              {stats.overdueCount > 0 && (
+                <p>
+                  يوجد <span className="font-semibold text-foreground">{stats.overdueCount}</span> مشترك متأخر عن الدفع —{" "}
+                  <Link href="/collections" className="font-medium text-primary hover:underline">
+                    عرض الجباية
+                  </Link>
+                </p>
+              )}
+              {stats.expiredSubscriptionsCount > 0 && (
+                <p>
+                  يوجد <span className="font-semibold text-foreground">{stats.expiredSubscriptionsCount}</span> اشتراك منتهي يحتاج مراجعة —{" "}
+                  <Link href="/subscriptions" className="font-medium text-primary hover:underline">
+                    عرض الاشتراكات
+                  </Link>
+                </p>
+              )}
+            </AlertDescription>
+          </div>
+        </Alert>
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">

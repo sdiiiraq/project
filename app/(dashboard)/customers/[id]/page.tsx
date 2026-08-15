@@ -3,6 +3,7 @@ import { requireWorkspace } from "@/lib/auth/session";
 import { requirePermission, roleHasPermission } from "@/lib/rbac/access";
 import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CustomerStatusBadge } from "@/components/customers/status-badge";
 import { RecordPaymentDialog } from "@/components/customers/record-payment-dialog";
@@ -48,7 +49,7 @@ export default async function CustomerProfilePage({ params }: { params: Promise<
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold">{customer.name}</h1>
+            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{customer.name}</h1>
             <CustomerStatusBadge status={customer.status} />
           </div>
           <p className="text-sm text-muted-foreground">#{customer.subscriberNumber}</p>
@@ -119,34 +120,32 @@ export default async function CustomerProfilePage({ params }: { params: Promise<
         </TabsContent>
 
         <TabsContent value="financial">
-          <Card>
-            <CardContent className="p-0">
-              {customer.invoices.length === 0 ? (
-                <p className="p-6 text-center text-sm text-muted-foreground">لا توجد فواتير بعد</p>
-              ) : (
-                <table className="w-full text-sm">
-                  <thead className="border-b bg-muted/40 text-muted-foreground">
-                    <tr>
-                      <th className="px-4 py-2.5 text-start font-medium">الفترة</th>
-                      <th className="px-4 py-2.5 text-start font-medium">المبلغ</th>
-                      <th className="px-4 py-2.5 text-start font-medium">المدفوع</th>
-                      <th className="px-4 py-2.5 text-start font-medium">الحالة</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {customer.invoices.map((invoice) => (
-                      <tr key={invoice.id}>
-                        <td className="px-4 py-2.5">{formatDate(invoice.periodStart)}</td>
-                        <td className="px-4 py-2.5">{formatMoney(Number(invoice.amount))}</td>
-                        <td className="px-4 py-2.5">{formatMoney(Number(invoice.paidAmount))}</td>
-                        <td className="px-4 py-2.5">{invoice.status}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </CardContent>
-          </Card>
+          {customer.invoices.length === 0 ? (
+            <Card>
+              <CardContent className="p-6 text-center text-sm text-muted-foreground">لا توجد فواتير بعد</CardContent>
+            </Card>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>الفترة</TableHead>
+                  <TableHead>المبلغ</TableHead>
+                  <TableHead>المدفوع</TableHead>
+                  <TableHead>الحالة</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {customer.invoices.map((invoice) => (
+                  <TableRow key={invoice.id}>
+                    <TableCell>{formatDate(invoice.periodStart)}</TableCell>
+                    <TableCell>{formatMoney(Number(invoice.amount))}</TableCell>
+                    <TableCell>{formatMoney(Number(invoice.paidAmount))}</TableCell>
+                    <TableCell>{invoice.status}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
           {lastPayment && (
             <p className="mt-3 text-sm text-muted-foreground">
               آخر دفعة: {formatMoney(Number(lastPayment.amount))} بتاريخ {formatDate(lastPayment.date)}

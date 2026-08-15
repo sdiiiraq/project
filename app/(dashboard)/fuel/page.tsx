@@ -34,7 +34,7 @@ export default async function FuelPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold">الوقود</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">الوقود</h1>
           <p className="text-sm text-muted-foreground">المخزون الحالي: {currentStock.toLocaleString("ar-IQ")} لتر</p>
         </div>
         {canCreate && (
@@ -51,7 +51,7 @@ export default async function FuelPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">المخزون الحالي</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xl font-bold">{currentStock.toLocaleString("ar-IQ")} لتر</p>
+            <p className="text-2xl font-bold tracking-tight md:text-3xl">{currentStock.toLocaleString("ar-IQ")} لتر</p>
           </CardContent>
         </Card>
         <Card>
@@ -59,7 +59,7 @@ export default async function FuelPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">إجمالي المشتريات</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xl font-bold">{formatMoney(Number(purchaseAgg._sum.totalCost ?? 0))}</p>
+            <p className="text-2xl font-bold tracking-tight md:text-3xl">{formatMoney(Number(purchaseAgg._sum.totalCost ?? 0))}</p>
           </CardContent>
         </Card>
         <Card>
@@ -67,7 +67,7 @@ export default async function FuelPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">إجمالي الاستهلاك</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xl font-bold">{Number(usageAgg._sum.quantityLiters ?? 0).toLocaleString("ar-IQ")} لتر</p>
+            <p className="text-2xl font-bold tracking-tight md:text-3xl">{Number(usageAgg._sum.quantityLiters ?? 0).toLocaleString("ar-IQ")} لتر</p>
           </CardContent>
         </Card>
       </div>

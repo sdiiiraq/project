@@ -29,7 +29,7 @@ export default async function AdminTicketDetailPage({ params }: { params: Promis
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold">{ticket.subject}</h1>
+            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{ticket.subject}</h1>
             <TicketStatusBadge status={ticket.status} />
           </div>
           <p className="text-sm text-muted-foreground">

@@ -24,7 +24,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <div>
         <div className="flex items-center gap-2">
-          <h1 className="text-xl font-bold">{ticket.subject}</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{ticket.subject}</h1>
           <TicketStatusBadge status={ticket.status} />
         </div>
         <p className="text-sm text-muted-foreground">{ticket.category}</p>

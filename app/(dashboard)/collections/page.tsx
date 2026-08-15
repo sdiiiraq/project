@@ -37,7 +37,7 @@ export default async function CollectionsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-bold">الجباية</h1>
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">الجباية</h1>
         <p className="text-sm text-muted-foreground">
           إجمالي المتبقي: <span className="font-semibold text-warning">{formatMoney(totalOutstanding)}</span>
         </p>

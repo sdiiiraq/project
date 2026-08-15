@@ -28,7 +28,7 @@ export default async function SettingsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-bold">الإعدادات</h1>
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">الإعدادات</h1>
         <p className="text-sm text-muted-foreground">إدارة بيانات المولدة، أسعار الأمبير، وفريق العمل.</p>
       </div>
 
