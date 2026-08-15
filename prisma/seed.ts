@@ -5,7 +5,6 @@ import { DEFAULT_ROLE_PERMISSIONS } from "../lib/rbac/roles";
 const db = new PrismaClient();
 
 const SYSTEM_EXPENSE_CATEGORIES = [
-  "وقود",
   "صيانة",
   "قطع غيار",
   "رواتب",

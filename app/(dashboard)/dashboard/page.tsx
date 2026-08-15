@@ -44,7 +44,7 @@ export default async function DashboardPage() {
     { label: "المشتركين الفعالين", value: String(stats.activeCustomerCount), icon: Users2, tone: "success" as const },
     { label: "مجموع الأمبيرات", value: `${stats.totalAmperes} أمبير`, icon: Zap, tone: "warning" as const },
     {
-      label: "المحصّل هذا الشهر",
+      label: "الدافع هذا الشهر",
       value: formatMoney(stats.monthCollected),
       icon: TrendingUp,
       tone: "success" as const,
@@ -70,7 +70,7 @@ export default async function DashboardPage() {
       value: formatMoney(stats.netProfit),
       icon: TrendingUp,
       tone: stats.netProfit >= 0 ? ("success" as const) : ("destructive" as const),
-      hint: "المحصّل بعد خصم المصاريف والوقود والصيانة",
+      hint: "الدافع بعد خصم المصاريف والوقود والصيانة",
     },
   ];
 

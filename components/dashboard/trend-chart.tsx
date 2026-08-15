@@ -3,7 +3,7 @@
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { formatMoney } from "@/lib/utils/money";
 
-export function RevenueTrendChart({ data }: { data: { month: string; المطلوب: number; المحصّل: number }[] }) {
+export function RevenueTrendChart({ data }: { data: { month: string; المطلوب: number; الدافع: number }[] }) {
   return (
     <ResponsiveContainer width="100%" height={260}>
       <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -46,7 +46,7 @@ export function RevenueTrendChart({ data }: { data: { month: string; المطل�
           labelStyle={{ color: "hsl(var(--foreground))" }}
         />
         <Area type="monotone" dataKey="المطلوب" stroke="hsl(var(--primary))" fill="url(#colorDue)" strokeWidth={2} />
-        <Area type="monotone" dataKey="المحصّل" stroke="hsl(var(--success))" fill="url(#colorCollected)" strokeWidth={2} />
+        <Area type="monotone" dataKey="الدافع" stroke="hsl(var(--success))" fill="url(#colorCollected)" strokeWidth={2} />
       </AreaChart>
     </ResponsiveContainer>
   );

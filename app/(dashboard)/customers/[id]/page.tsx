@@ -77,7 +77,7 @@ export default async function CustomerProfilePage({ params }: { params: Promise<
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">المحصّل</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">الدافع</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xl font-bold text-success">{formatMoney(totalPaid)}</p>

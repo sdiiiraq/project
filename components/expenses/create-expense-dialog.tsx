@@ -81,7 +81,7 @@ export function CreateExpenseDialog({ categories }: { categories: { id: string; 
             <Input id="date" type="date" {...register("date")} />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="vendor">الجهة (اختياري)</Label>
+            <Label htmlFor="vendor">على ماذا صرفت (اختياري)</Label>
             <Input id="vendor" {...register("vendor")} />
           </div>
           <div className="flex flex-col gap-1.5">

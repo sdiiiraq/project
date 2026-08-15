@@ -77,7 +77,7 @@ export async function getDashboardStats(workspaceId: string) {
     }),
   );
 
-  const revenueTrend = monthlyStats.map((s) => ({ month: s.label, المطلوب: s.due, المحصّل: s.collected }));
+  const revenueTrend = monthlyStats.map((s) => ({ month: s.label, المطلوب: s.due, الدافع: s.collected }));
   const growthTrend = monthlyStats.map((s) => ({ month: s.label, مشتركون: s.customersUntilMonth }));
 
   return {

@@ -40,8 +40,8 @@ function EmailSignupForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="fullName">الاسم الكامل</Label>
-        <Input id="fullName" {...register("fullName")} />
+        <Label htmlFor="fullName">الاسم الثلاثي</Label>
+        <Input id="fullName" placeholder="مثال: أحمد محمد علي" {...register("fullName")} />
         <FieldError message={errors.fullName?.message} />
       </div>
       <div className="flex flex-col gap-1.5">
@@ -94,8 +94,8 @@ function PhoneSignupForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="fullNamePhone">الاسم الكامل</Label>
-        <Input id="fullNamePhone" {...register("fullName")} />
+        <Label htmlFor="fullNamePhone">الاسم الثلاثي</Label>
+        <Input id="fullNamePhone" placeholder="مثال: أحمد محمد علي" {...register("fullName")} />
         <FieldError message={errors.fullName?.message} />
       </div>
       <div className="flex flex-col gap-1.5">

@@ -30,8 +30,8 @@ export function GeneratorSettingsForm({ defaultValues }: { defaultValues: Genera
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="ownerName">اسم صاحب المولدة</Label>
-          <Input id="ownerName" {...register("ownerName")} />
+          <Label htmlFor="ownerName">الاسم الثلاثي لصاحب المولدة</Label>
+          <Input id="ownerName" placeholder="مثال: أحمد محمد علي" {...register("ownerName")} />
           {errors.ownerName && <p className="text-xs text-destructive">{errors.ownerName.message}</p>}
         </div>
         <div className="flex flex-col gap-1.5">

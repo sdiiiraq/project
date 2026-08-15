@@ -21,7 +21,10 @@ export default async function ExpensesPage() {
       orderBy: { date: "desc" },
       take: 50,
     }),
-    db.expenseCategory.findMany({ where: { OR: [{ workspaceId: workspace.id }, { workspaceId: null, isSystem: true }] } }),
+    // نستثني "وقود" من قائمة التصنيفات القابلة للاختيار — لها قسمها المستقل الآن. السجلات القديمة المرتبطة بها تبقى كما هي.
+    db.expenseCategory.findMany({
+      where: { OR: [{ workspaceId: workspace.id }, { workspaceId: null, isSystem: true }], name: { not: "وقود" } },
+    }),
   ]);
 
   const total = expenses.reduce((sum, e) => sum + Number(e.amount), 0);

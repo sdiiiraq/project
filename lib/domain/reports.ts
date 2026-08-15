@@ -64,7 +64,7 @@ export async function getReportData(
         columns: [
           { key: "date", label: "التاريخ" },
           { key: "category", label: "التصنيف" },
-          { key: "vendor", label: "الجهة" },
+          { key: "vendor", label: "على ماذا صرفت" },
           { key: "amount", label: "المبلغ" },
         ],
         rows: expenses.map((e) => ({
@@ -133,7 +133,7 @@ export async function getReportData(
           { key: "amount", label: "المبلغ" },
         ],
         rows: [
-          { label: "إجمالي المحصّل", amount: revenue },
+          { label: "إجمالي الدافع", amount: revenue },
           { label: "إجمالي المصروفات", amount: totalExpenses },
           { label: "صافي الربح", amount: revenue - totalExpenses },
         ],

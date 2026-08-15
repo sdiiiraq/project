@@ -1,5 +1,11 @@
 import { z } from "zod";
 import { isEmail, isIraqiPhone } from "@/lib/utils/phone";
+import { isTripleName } from "@/lib/utils/name";
+
+const fullNameSchema = z
+  .string()
+  .min(2, "أدخل الاسم الثلاثي")
+  .refine(isTripleName, "أدخل الاسم الثلاثي كاملًا (3 أسماء على الأقل)");
 
 export const loginSchema = z.object({
   identifier: z
@@ -15,7 +21,7 @@ const passwordSchema = z
 
 export const signupEmailSchema = z
   .object({
-    fullName: z.string().min(2, "أدخل الاسم الكامل"),
+    fullName: fullNameSchema,
     email: z.string().email("البريد الإلكتروني غير صحيح"),
     password: passwordSchema,
     confirmPassword: z.string(),
@@ -28,7 +34,7 @@ export const signupEmailSchema = z
 
 export const signupPhoneSchema = z
   .object({
-    fullName: z.string().min(2, "أدخل الاسم الكامل"),
+    fullName: fullNameSchema,
     phone: z.string().refine(isIraqiPhone, "رقم الهاتف العراقي غير صحيح"),
     password: passwordSchema,
     confirmPassword: z.string(),

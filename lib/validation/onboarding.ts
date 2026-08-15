@@ -1,11 +1,15 @@
 import { z } from "zod";
+import { isTripleName } from "@/lib/utils/name";
 
 export const generatorNameSchema = z.object({
   name: z.string().min(2, "أدخل اسم المولدة"),
 });
 
 export const generatorInfoSchema = z.object({
-  ownerName: z.string().min(2, "أدخل اسم صاحب المولدة"),
+  ownerName: z
+    .string()
+    .min(2, "أدخل الاسم الثلاثي لصاحب المولدة")
+    .refine(isTripleName, "أدخل الاسم الثلاثي كاملًا (3 أسماء على الأقل)"),
   phone: z.string().min(1, "أدخل رقم الهاتف"),
   region: z.string().min(1, "أدخل المنطقة"),
   address: z.string().optional(),
