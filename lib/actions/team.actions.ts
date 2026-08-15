@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireWorkspace } from "@/lib/auth/session";
 import { requirePermission, ForbiddenError } from "@/lib/rbac/access";
+import { canUseLimit } from "@/lib/rbac/features";
 import { createAdminClient } from "@/lib/supabase/server";
 import { normalizeIraqiPhone, isEmail } from "@/lib/utils/phone";
 import { addEmployeeSchema, updateEmployeePermissionsSchema, removeEmployeeSchema } from "@/lib/validation/team";
@@ -31,6 +32,12 @@ export async function addEmployee(input: unknown): Promise<ActionResult> {
   } catch (e) {
     if (e instanceof ForbiddenError) return { error: e.message };
     throw e;
+  }
+
+  const currentUserCount = await db.workspaceMember.count({ where: { workspaceId: workspace.id } });
+  const { allowed, limit } = await canUseLimit(workspace.id, "users", currentUserCount);
+  if (!allowed) {
+    return { error: `لقد وصلت إلى الحد المسموح في باقتك (${limit} مستخدم). قم بترقية الباقة لإضافة المزيد.` };
   }
 
   const email = parsed.data.email && isEmail(parsed.data.email) ? parsed.data.email : undefined;

@@ -33,15 +33,20 @@ export async function recordPayment(input: unknown): Promise<ActionResult> {
     return { error: `المبلغ أكبر من المستحق الكلي (${outstanding.toLocaleString("ar-IQ")} د.ع). لا يمكن تسجيل دفعة أكبر من المطلوب.` };
   }
 
-  await applyPayment({
-    workspaceId: workspace.id,
-    customerId: parsed.data.customerId,
-    actorUserId: user.id,
-    amount: parsed.data.amount,
-    date: parsed.data.date,
-    method: parsed.data.method,
-    note: parsed.data.note,
-  });
+  try {
+    await applyPayment({
+      workspaceId: workspace.id,
+      customerId: parsed.data.customerId,
+      actorUserId: user.id,
+      amount: parsed.data.amount,
+      date: parsed.data.date,
+      method: parsed.data.method,
+      note: parsed.data.note,
+    });
+  } catch (e) {
+    if (e instanceof Error) return { error: e.message };
+    throw e;
+  }
 
   revalidatePath(`/customers/${parsed.data.customerId}`);
   revalidatePath("/dashboard");

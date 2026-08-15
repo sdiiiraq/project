@@ -235,11 +235,20 @@ export async function applyPayment(params: {
   note?: string;
 }) {
   return db.$transaction(async (tx) => {
+    // قفل تشاؤمي (FOR UPDATE) على فواتير المشترك المفتوحة — يمنع Race Condition عند دفعتين متزامنتين
+    // لنفس المشترك (Double Click / Retry / طلبين حقيقيين بنفس اللحظة) من تجاوز المبلغ المستحق فعليًا.
+    await tx.$queryRaw`SELECT id FROM invoices WHERE "customerId" = ${params.customerId}::uuid AND status IN ('UNPAID', 'PARTIALLY_PAID', 'OVERDUE') FOR UPDATE`;
+
     let remaining = params.amount;
     const openInvoices = await tx.invoice.findMany({
       where: { customerId: params.customerId, status: { in: ["UNPAID", "PARTIALLY_PAID", "OVERDUE"] } },
       orderBy: { periodStart: "asc" },
     });
+
+    const outstandingNow = openInvoices.reduce((sum, inv) => sum + (Number(inv.amount) - Number(inv.paidAmount)), 0);
+    if (params.amount > outstandingNow) {
+      throw new Error(`المبلغ أكبر من المستحق الكلي (${outstandingNow.toLocaleString("ar-IQ")} د.ع). لا يمكن تسجيل دفعة أكبر من المطلوب.`);
+    }
 
     const payment = await tx.payment.create({
       data: {
