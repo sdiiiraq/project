@@ -2,21 +2,21 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import {
   generatorNameSchema,
   generatorInfoSchema,
-  amperePlansSchema,
+  pricePerAmpereSchema,
   type GeneratorNameInput,
   type GeneratorInfoInput,
-  type AmperePlansInput,
+  type PricePerAmpereInput,
 } from "@/lib/validation/onboarding";
 import {
   updateGeneratorName,
   updateGeneratorInfo,
-  saveAmperePlans,
+  savePricePerAmpere,
   completeOnboarding,
 } from "@/lib/actions/onboarding.actions";
 import { Button } from "@/components/ui/button";
@@ -24,18 +24,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Logo } from "@/components/brand/logo";
-import { Plus, Trash2, CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 
 const STEP_TITLES = ["اسم المولدة", "معلومات المولدة", "أسعار الأمبير", "أول مشترك", "جاهز"];
 
 export function OnboardingWizard({
   workspaceName,
   generatorInfo,
-  initialPlans,
+  initialAmperePrice,
 }: {
   workspaceName: string;
   generatorInfo: { ownerName: string; phone: string; region: string; address: string };
-  initialPlans: { amperes: number; monthlyPrice: number }[];
+  initialAmperePrice: number;
 }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -58,7 +58,7 @@ export function OnboardingWizard({
         <StepInfo defaultValues={generatorInfo} onBack={() => setStep(0)} onNext={() => setStep(2)} />
       )}
       {step === 2 && (
-        <StepPricing defaultPlans={initialPlans} onBack={() => setStep(1)} onNext={() => setStep(3)} />
+        <StepPricing defaultPrice={initialAmperePrice} onBack={() => setStep(1)} onNext={() => setStep(3)} />
       )}
       {step === 3 && <StepFirstCustomer onBack={() => setStep(2)} onNext={() => setStep(4)} />}
       {step === 4 && (
@@ -164,37 +164,27 @@ function StepInfo({
 }
 
 function StepPricing({
-  defaultPlans,
+  defaultPrice,
   onBack,
   onNext,
 }: {
-  defaultPlans: { amperes: number; monthlyPrice: number }[];
+  defaultPrice: number;
   onBack: () => void;
   onNext: () => void;
 }) {
   const [loading, setLoading] = useState(false);
   const {
     register,
-    control,
     handleSubmit,
     formState: { errors },
-  } = useForm<AmperePlansInput>({
-    resolver: zodResolver(amperePlansSchema),
-    defaultValues: {
-      plans:
-        defaultPlans.length > 0
-          ? defaultPlans
-          : [
-              { amperes: 5, monthlyPrice: 50000 },
-              { amperes: 10, monthlyPrice: 100000 },
-            ],
-    },
+  } = useForm<PricePerAmpereInput>({
+    resolver: zodResolver(pricePerAmpereSchema),
+    defaultValues: { amperePriceIQD: defaultPrice > 0 ? defaultPrice : 10000 },
   });
-  const { fields, append, remove } = useFieldArray({ control, name: "plans" });
 
-  async function onSubmit(values: AmperePlansInput) {
+  async function onSubmit(values: PricePerAmpereInput) {
     setLoading(true);
-    const result = await saveAmperePlans(values);
+    const result = await savePricePerAmpere(values);
     setLoading(false);
     if (result && "error" in result) return toast.error(result.error);
     onNext();
@@ -202,34 +192,15 @@ function StepPricing({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-      <p className="text-sm text-muted-foreground">حدد سعر كل باقة أمبير شهريًا. يمكنك تعديلها لاحقًا.</p>
-      <div className="flex flex-col gap-3">
-        {fields.map((field, index) => (
-          <div key={field.id} className="flex items-end gap-2">
-            <div className="flex flex-1 flex-col gap-1.5">
-              <Label>الأمبير</Label>
-              <Input type="number" {...register(`plans.${index}.amperes` as const)} />
-            </div>
-            <div className="flex flex-1 flex-col gap-1.5">
-              <Label>السعر الشهري (د.ع)</Label>
-              <Input type="number" {...register(`plans.${index}.monthlyPrice` as const)} />
-            </div>
-            <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length === 1}>
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
-          </div>
-        ))}
+      <p className="text-sm text-muted-foreground">
+        حدد سعر الأمبير الواحد شهريًا. عند إضافة مشترك تختار عدد الأمبيرات فقط ويُحسب السعر تلقائيًا. يمكنك تعديل
+        السعر لاحقًا من الإعدادات.
+      </p>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="amperePriceIQD">سعر الأمبير الواحد شهريًا (د.ع)</Label>
+        <Input id="amperePriceIQD" type="number" min={1} inputMode="numeric" {...register("amperePriceIQD")} />
+        {errors.amperePriceIQD && <p className="text-xs text-destructive">{errors.amperePriceIQD.message}</p>}
       </div>
-      {errors.plans?.message && <p className="text-xs text-destructive">{errors.plans.message}</p>}
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="self-start"
-        onClick={() => append({ amperes: 15, monthlyPrice: 150000 })}
-      >
-        <Plus className="h-4 w-4" /> إضافة باقة
-      </Button>
       <div className="flex gap-3">
         <Button type="button" variant="outline" size="lg" onClick={onBack} className="flex-1">
           رجوع

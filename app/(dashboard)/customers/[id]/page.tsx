@@ -31,10 +31,8 @@ export default async function CustomerProfilePage({ params }: { params: Promise<
 
   if (!customer) notFound();
 
-  const amperePlans = await db.amperePlan.findMany({
-    where: { workspaceId: workspace.id, isActive: true },
-    orderBy: { amperes: "asc" },
-  });
+  const ws = await db.workspace.findUnique({ where: { id: workspace.id }, select: { amperePriceIQD: true } });
+  const pricePerAmpere = Number(ws?.amperePriceIQD ?? 0);
 
   const activeSubscription = customer.subscriptions[0];
   const totalDue = customer.invoices.reduce((sum, inv) => sum + Number(inv.amount), 0);
@@ -56,7 +54,13 @@ export default async function CustomerProfilePage({ params }: { params: Promise<
           <p className="text-sm text-muted-foreground">#{customer.subscriberNumber}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {canManageSubscription && <ChangeAmpereDialog customerId={customer.id} amperePlans={amperePlans.map((p) => ({ id: p.id, amperes: p.amperes, monthlyPrice: Number(p.monthlyPrice) }))} />}
+          {canManageSubscription && (
+            <ChangeAmpereDialog
+              customerId={customer.id}
+              currentAmperes={activeSubscription?.amperes ?? 0}
+              pricePerAmpere={pricePerAmpere}
+            />
+          )}
           {canRecordPayment && <RecordPaymentDialog customerId={customer.id} outstanding={outstanding} />}
         </div>
       </div>

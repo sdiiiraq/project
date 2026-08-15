@@ -8,10 +8,8 @@ export default async function NewCustomerPage() {
   const { workspace, role } = await requireWorkspace();
   requirePermission(role, "customers.create");
 
-  const amperePlans = await db.amperePlan.findMany({
-    where: { workspaceId: workspace.id, isActive: true },
-    orderBy: { amperes: "asc" },
-  });
+  const ws = await db.workspace.findUnique({ where: { id: workspace.id }, select: { amperePriceIQD: true } });
+  const pricePerAmpere = Number(ws?.amperePriceIQD ?? 0);
 
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-6">
@@ -20,14 +18,24 @@ export default async function NewCustomerPage() {
         <p className="text-sm text-muted-foreground">سيتم إنشاء اشتراك فعّال وفاتورة الشهر الحالي تلقائيًا.</p>
       </div>
 
+      {pricePerAmpere <= 0 && (
+        <Card className="border-warning/30 bg-warning/5">
+          <CardContent className="p-4 text-sm">
+            لم يتم تحديد سعر الأمبير الواحد بعد. اذهب إلى{" "}
+            <a href="/settings" className="text-primary hover:underline">
+              الإعدادات
+            </a>{" "}
+            وحدده أولًا قبل إضافة مشترك.
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>بيانات المشترك</CardTitle>
         </CardHeader>
         <CardContent>
-          <CustomerCreateForm
-            amperePlans={amperePlans.map((p) => ({ id: p.id, amperes: p.amperes, monthlyPrice: Number(p.monthlyPrice) }))}
-          />
+          <CustomerCreateForm pricePerAmpere={pricePerAmpere} />
         </CardContent>
       </Card>
     </div>

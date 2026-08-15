@@ -37,16 +37,21 @@ export async function createCustomer(input: unknown): Promise<ActionResult> {
   const generator = await db.generator.findFirst({ where: { workspaceId: workspace.id } });
   if (!generator) return { error: "لم يتم العثور على بيانات المولدة." };
 
-  const { customer } = await createCustomerWithSubscription({
-    workspaceId: workspace.id,
-    generatorId: generator.id,
-    actorUserId: user.id,
-    ...parsed.data,
-  });
+  try {
+    const { customer } = await createCustomerWithSubscription({
+      workspaceId: workspace.id,
+      generatorId: generator.id,
+      actorUserId: user.id,
+      ...parsed.data,
+    });
 
-  revalidatePath("/customers");
-  revalidatePath("/dashboard");
-  return { success: true, customerId: customer.id };
+    revalidatePath("/customers");
+    revalidatePath("/dashboard");
+    return { success: true, customerId: customer.id };
+  } catch (e) {
+    if (e instanceof Error) return { error: e.message };
+    throw e;
+  }
 }
 
 export async function updateCustomer(input: unknown): Promise<ActionResult> {
@@ -152,14 +157,19 @@ export async function changeAmpere(input: unknown): Promise<ActionResult> {
   const customer = await db.customer.findFirst({ where: { id: parsed.data.customerId, workspaceId: workspace.id } });
   if (!customer) return { error: "المشترك غير موجود." };
 
-  await changeCustomerAmpere({
-    workspaceId: workspace.id,
-    actorUserId: user.id,
-    customerId: parsed.data.customerId,
-    amperePlanId: parsed.data.amperePlanId,
-    reason: parsed.data.reason,
-  });
+  try {
+    await changeCustomerAmpere({
+      workspaceId: workspace.id,
+      actorUserId: user.id,
+      customerId: parsed.data.customerId,
+      amperes: parsed.data.amperes,
+      reason: parsed.data.reason,
+    });
 
-  revalidatePath(`/customers/${parsed.data.customerId}`);
-  return { success: true };
+    revalidatePath(`/customers/${parsed.data.customerId}`);
+    return { success: true };
+  } catch (e) {
+    if (e instanceof Error) return { error: e.message };
+    throw e;
+  }
 }

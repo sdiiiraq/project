@@ -11,15 +11,10 @@ export const generatorInfoSchema = z.object({
   address: z.string().optional(),
 });
 
-export const amperePlanRowSchema = z.object({
-  amperes: z.coerce.number().int().positive("قيمة الأمبير غير صحيحة"),
-  monthlyPrice: z.coerce.number().positive("السعر يجب أن يكون أكبر من صفر"),
-});
-
-export const amperePlansSchema = z.object({
-  plans: z.array(amperePlanRowSchema).min(1, "أضف خطة سعر واحدة على الأقل"),
+export const pricePerAmpereSchema = z.object({
+  amperePriceIQD: z.coerce.number().positive("السعر يجب أن يكون أكبر من صفر"),
 });
 
 export type GeneratorNameInput = z.infer<typeof generatorNameSchema>;
 export type GeneratorInfoInput = z.infer<typeof generatorInfoSchema>;
-export type AmperePlansInput = z.infer<typeof amperePlansSchema>;
+export type PricePerAmpereInput = z.infer<typeof pricePerAmpereSchema>;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Zap } from "lucide-react";
@@ -10,16 +10,17 @@ import { changeAmpere } from "@/lib/actions/customer.actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { formatMoney } from "@/lib/utils/money";
 
 export function ChangeAmpereDialog({
   customerId,
-  amperePlans,
+  currentAmperes,
+  pricePerAmpere,
 }: {
   customerId: string;
-  amperePlans: { id: string; amperes: number; monthlyPrice: number }[];
+  currentAmperes: number;
+  pricePerAmpere: number;
 }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -29,7 +30,13 @@ export function ChangeAmpereDialog({
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<ChangeAmpereInput>({ resolver: zodResolver(changeAmpereSchema), defaultValues: { customerId } });
+  } = useForm<ChangeAmpereInput>({
+    resolver: zodResolver(changeAmpereSchema),
+    defaultValues: { customerId, amperes: currentAmperes },
+  });
+
+  const amperesValue = useWatch({ control, name: "amperes" });
+  const computedPrice = Number(amperesValue) > 0 ? Number(amperesValue) * pricePerAmpere : 0;
 
   async function onSubmit(values: ChangeAmpereInput) {
     setLoading(true);
@@ -50,31 +57,20 @@ export function ChangeAmpereDialog({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>تغيير باقة الأمبير</DialogTitle>
+          <DialogTitle>تغيير عدد الأمبيرات</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <input type="hidden" {...register("customerId")} value={customerId} />
           <div className="flex flex-col gap-1.5">
-            <Label>الباقة الجديدة</Label>
-            <Controller
-              control={control}
-              name="amperePlanId"
-              render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر الأمبير" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {amperePlans.map((plan) => (
-                      <SelectItem key={plan.id} value={plan.id}>
-                        {plan.amperes} أمبير — {formatMoney(plan.monthlyPrice)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            {errors.amperePlanId && <p className="text-xs text-destructive">{errors.amperePlanId.message}</p>}
+            <Label htmlFor="amperes">عدد الأمبيرات الجديد</Label>
+            <Input id="amperes" type="number" min={1} inputMode="numeric" {...register("amperes")} />
+            {errors.amperes && <p className="text-xs text-destructive">{errors.amperes.message}</p>}
+            <p className="text-xs text-muted-foreground">
+              السعر الشهري الجديد:{" "}
+              <span className="font-medium text-foreground">
+                {computedPrice > 0 ? formatMoney(computedPrice) : "—"}
+              </span>
+            </p>
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="reason">سبب التغيير (اختياري)</Label>

@@ -16,12 +16,27 @@ export default async function DashboardPage() {
   ]);
 
   const kpis = [
-    { label: "إجمالي المشتركين", value: stats.customerCount, icon: Users },
+    { label: "مجموع المشتركين", value: stats.customerCount, icon: Users },
     { label: "المشتركين الفعالين", value: stats.activeCustomerCount, icon: Users2 },
-    { label: "إجمالي الأمبيرات", value: `${stats.totalAmperes} أمبير`, icon: Zap },
-    { label: "المطلوب هذا الشهر", value: formatMoney(stats.monthDue), icon: Wallet },
-    { label: "المحصّل هذا الشهر", value: formatMoney(stats.monthCollected), icon: TrendingUp },
-    { label: "المتبقي الكلي", value: formatMoney(stats.totalOutstanding), icon: AlertTriangle },
+    { label: "مجموع الأمبيرات", value: `${stats.totalAmperes} أمبير`, icon: Zap },
+    {
+      label: "المطلوب هذا الشهر",
+      value: formatMoney(stats.monthDue),
+      icon: Wallet,
+      hint: "مجموع فواتير الشهر الحالي لكل المشتركين",
+    },
+    {
+      label: "المحصّل هذا الشهر",
+      value: formatMoney(stats.monthCollected),
+      icon: TrendingUp,
+      hint: "المبلغ الذي تم استلامه فعليًا هذا الشهر",
+    },
+    {
+      label: "المتبقي الكلي",
+      value: formatMoney(stats.totalOutstanding),
+      icon: AlertTriangle,
+      hint: "ديون متأخرة من هذا الشهر وأشهر سابقة لم تُحصّل بعد",
+    },
     { label: "المصروفات هذا الشهر", value: formatMoney(stats.monthExpensesTotal), icon: TrendingDown },
     { label: "صافي الربح هذا الشهر", value: formatMoney(stats.netProfit), icon: TrendingUp },
   ];
@@ -44,6 +59,7 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <p className="text-xl font-bold">{kpi.value}</p>
+              {"hint" in kpi && kpi.hint && <p className="mt-1 text-xs text-muted-foreground">{kpi.hint}</p>}
             </CardContent>
           </Card>
         ))}

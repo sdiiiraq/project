@@ -10,7 +10,7 @@ export const createCustomerSchema = z.object({
   alley: z.string().optional(),
   houseNumber: z.string().optional(),
   notes: z.string().optional(),
-  amperePlanId: z.string().uuid("اختر باقة الأمبير"),
+  amperes: z.coerce.number().int().positive("أدخل عدد الأمبيرات"),
 });
 
 export const updateCustomerSchema = z.object({
@@ -31,7 +31,7 @@ export const changeCustomerStatusSchema = z.object({
 
 export const changeAmpereSchema = z.object({
   customerId: z.string().uuid(),
-  amperePlanId: z.string().uuid("اختر باقة الأمبير الجديدة"),
+  amperes: z.coerce.number().int().positive("أدخل عدد الأمبيرات الجديد"),
   reason: z.string().optional(),
 });
 

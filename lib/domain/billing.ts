@@ -30,6 +30,23 @@ export async function nextSubscriberNumber(tx: Tx, workspaceId: string): Promise
   return String(count + 1).padStart(4, "0");
 }
 
+// يُنشئ (أو يُحدّث) سجل AmperePlan "ظليّ" مخصص لعدد الأمبيرات المُدخل يدويًا، بالسعر المحسوب من
+// سعر الأمبير الواحد في إعدادات الـ Workspace — يحافظ على العلاقة الحالية CustomerSubscription -> AmperePlan
+// دون الحاجة لتغيير المخطط الأساسي أو حصر المستخدم بباقات محددة مسبقًا.
+async function resolveAmperePlanByAmperes(tx: Tx, workspaceId: string, amperes: number) {
+  const workspace = await tx.workspace.findUniqueOrThrow({ where: { id: workspaceId } });
+  if (!workspace.amperePriceIQD || Number(workspace.amperePriceIQD) <= 0) {
+    throw new Error("لم يتم تحديد سعر الأمبير الواحد بعد. اذهب إلى الإعدادات وحدده أولًا.");
+  }
+  const monthlyPrice = Math.round(Number(workspace.amperePriceIQD) * amperes);
+
+  return tx.amperePlan.upsert({
+    where: { workspaceId_amperes_isCustom: { workspaceId, amperes, isCustom: true } },
+    update: { monthlyPrice, isActive: true },
+    create: { workspaceId, amperes, monthlyPrice, isCustom: true },
+  });
+}
+
 export async function createCustomerWithSubscription(params: {
   workspaceId: string;
   generatorId: string;
@@ -41,12 +58,10 @@ export async function createCustomerWithSubscription(params: {
   alley?: string;
   houseNumber?: string;
   notes?: string;
-  amperePlanId: string;
+  amperes: number;
 }) {
   return db.$transaction(async (tx) => {
-    const plan = await tx.amperePlan.findFirstOrThrow({
-      where: { id: params.amperePlanId, workspaceId: params.workspaceId },
-    });
+    const plan = await resolveAmperePlanByAmperes(tx, params.workspaceId, params.amperes);
 
     const subscriberNumber = await nextSubscriberNumber(tx, params.workspaceId);
     const now = new Date();
@@ -112,13 +127,11 @@ export async function changeCustomerAmpere(params: {
   workspaceId: string;
   actorUserId: string;
   customerId: string;
-  amperePlanId: string;
+  amperes: number;
   reason?: string;
 }) {
   return db.$transaction(async (tx) => {
-    const plan = await tx.amperePlan.findFirstOrThrow({
-      where: { id: params.amperePlanId, workspaceId: params.workspaceId },
-    });
+    const plan = await resolveAmperePlanByAmperes(tx, params.workspaceId, params.amperes);
 
     const subscription = await tx.customerSubscription.findFirstOrThrow({
       where: { customerId: params.customerId, status: "ACTIVE" },

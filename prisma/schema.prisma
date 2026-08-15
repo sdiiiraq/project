@@ -64,6 +64,7 @@ model Workspace {
   status    WorkspaceStatus @default(ACTIVE)
   region    String?
   address   String?
+  amperePriceIQD Decimal?   @db.Decimal(14, 2)
   onboardedAt DateTime?
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt

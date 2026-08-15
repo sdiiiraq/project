@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { GeneratorSettingsForm } from "./generator-settings-form";
-import { AmperePlansSettingsForm } from "./ampere-plans-settings-form";
+import { AmperePricingSettingsForm } from "./ampere-plans-settings-form";
 
 const ROLE_LABELS: Record<string, string> = {
   OWNER: "المالك",
@@ -19,9 +19,9 @@ export default async function SettingsPage() {
   const { workspace, role } = await requireWorkspace();
   requirePermission(role, "settings.manage");
 
-  const [generator, amperePlans, members] = await Promise.all([
+  const [generator, ws, members] = await Promise.all([
     db.generator.findFirst({ where: { workspaceId: workspace.id } }),
-    db.amperePlan.findMany({ where: { workspaceId: workspace.id, isCustom: false }, orderBy: { amperes: "asc" } }),
+    db.workspace.findUnique({ where: { id: workspace.id }, select: { amperePriceIQD: true } }),
     db.workspaceMember.findMany({ where: { workspaceId: workspace.id }, include: { user: true }, orderBy: { createdAt: "asc" } }),
   ]);
 
@@ -51,13 +51,11 @@ export default async function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>أسعار الأمبير</CardTitle>
-          <CardDescription>الأسعار الشهرية لكل باقة أمبير.</CardDescription>
+          <CardTitle>سعر الأمبير</CardTitle>
+          <CardDescription>حدد سعر الأمبير الواحد، ويُحسب اشتراك كل مشترك تلقائيًا حسب عدد أمبيراته.</CardDescription>
         </CardHeader>
         <CardContent>
-          <AmperePlansSettingsForm
-            initialPlans={amperePlans.map((p) => ({ amperes: p.amperes, monthlyPrice: Number(p.monthlyPrice) }))}
-          />
+          <AmperePricingSettingsForm initialPrice={Number(ws?.amperePriceIQD ?? 0)} />
         </CardContent>
       </Card>
 

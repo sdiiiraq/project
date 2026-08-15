@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireWorkspace } from "@/lib/auth/session";
 import {
-  amperePlansSchema,
+  pricePerAmpereSchema,
   generatorInfoSchema,
   generatorNameSchema,
 } from "@/lib/validation/onboarding";
@@ -45,23 +45,19 @@ export async function updateGeneratorInfo(input: unknown): Promise<ActionResult>
   return { success: true };
 }
 
-export async function saveAmperePlans(input: unknown): Promise<ActionResult> {
-  const parsed = amperePlansSchema.safeParse(input);
+export async function savePricePerAmpere(input: unknown): Promise<ActionResult> {
+  const parsed = pricePerAmpereSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
 
   const { workspace } = await requireWorkspace();
 
-  await db.$transaction(
-    parsed.data.plans.map((plan) =>
-      db.amperePlan.upsert({
-        where: { workspaceId_amperes_isCustom: { workspaceId: workspace.id, amperes: plan.amperes, isCustom: false } },
-        update: { monthlyPrice: plan.monthlyPrice, isActive: true },
-        create: { workspaceId: workspace.id, amperes: plan.amperes, monthlyPrice: plan.monthlyPrice },
-      }),
-    ),
-  );
+  await db.workspace.update({
+    where: { id: workspace.id },
+    data: { amperePriceIQD: parsed.data.amperePriceIQD },
+  });
 
   revalidatePath("/onboarding");
+  revalidatePath("/settings");
   return { success: true };
 }
 
