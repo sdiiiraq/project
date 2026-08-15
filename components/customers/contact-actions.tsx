@@ -1,6 +1,6 @@
 "use client";
 
-import { Phone } from "lucide-react";
+import { Phone, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -24,25 +24,29 @@ export function ContactActions({ phone }: { phone: string | null | undefined }) 
   if (!phone) return null;
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" title="اتصال" aria-label="اتصال">
+    <div className="flex items-center gap-1">
+      <Button asChild variant="ghost" size="icon" title="اتصال">
+        <a href={`tel:${phone}`} aria-label="اتصال">
           <Phone className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem asChild>
-          <a href={`tel:${phone}`}>اتصال مباشر</a>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <a href={whatsappHref(phone, DEFAULT_MESSAGE)} target="_blank" rel="noopener noreferrer">
-            واتساب
-          </a>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <a href={smsHref(phone, DEFAULT_MESSAGE)}>SMS</a>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </a>
+      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" title="رسالة تذكير" aria-label="رسالة تذكير">
+            <MessageCircle className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem asChild>
+            <a href={whatsappHref(phone, DEFAULT_MESSAGE)} target="_blank" rel="noopener noreferrer">
+              واتساب
+            </a>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <a href={smsHref(phone, DEFAULT_MESSAGE)}>SMS</a>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 }
