@@ -34,6 +34,14 @@ const config: Config = {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
         },
+        cyan: {
+          DEFAULT: "hsl(var(--cyan))",
+          foreground: "hsl(var(--cyan-foreground))",
+        },
+        "brand-accent": {
+          DEFAULT: "hsl(var(--brand-accent))",
+          foreground: "hsl(var(--brand-accent-foreground))",
+        },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
@@ -69,8 +77,19 @@ const config: Config = {
       },
       borderRadius: {
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        md: "calc(var(--radius) - 4px)",
+        sm: "calc(var(--radius) - 8px)",
+        xl: "calc(var(--radius) + 4px)",
+        "2xl": "calc(var(--radius) + 8px)",
+      },
+      boxShadow: {
+        premium: "0 1px 1px hsl(220 60% 2% / 0.2), 0 8px 24px -8px hsl(220 60% 2% / 0.45)",
+        "premium-lg": "0 2px 4px hsl(220 60% 2% / 0.25), 0 24px 48px -16px hsl(220 60% 2% / 0.6)",
+        glow: "0 4px 20px -4px hsl(var(--primary) / 0.45)",
+      },
+      ringOffsetColor: {
+        DEFAULT: "hsl(var(--background))",
+        background: "hsl(var(--background))",
       },
     },
   },
