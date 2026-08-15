@@ -1,4 +1,3 @@
-import type { MemberRole } from "@prisma/client";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
 import { MobileNav } from "./mobile-nav";
@@ -8,7 +7,7 @@ import { roleHasPermission } from "@/lib/rbac/access";
 import type { PermissionKey } from "@/lib/rbac/permissions";
 
 export function AppShell({
-  role,
+  permissions,
   workspaceId,
   workspaceName,
   userId,
@@ -18,7 +17,7 @@ export function AppShell({
   isPlatformAdmin = false,
   children,
 }: {
-  role: MemberRole;
+  permissions: ReadonlySet<PermissionKey>;
   workspaceId: string;
   workspaceName: string;
   userId: string;
@@ -29,7 +28,7 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const items = NAV_ITEMS.filter(
-    (item) => !item.permission || roleHasPermission(role, item.permission as PermissionKey),
+    (item) => !item.permission || roleHasPermission(permissions, item.permission as PermissionKey),
   );
 
   return (

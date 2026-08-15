@@ -9,8 +9,8 @@ import { formatDate, formatDateTime } from "@/lib/utils/date";
 import { Wrench } from "lucide-react";
 
 export default async function MaintenancePage() {
-  const { workspace, role } = await requireWorkspace();
-  requirePermission(role, "maintenance.read");
+  const { workspace, role, permissions } = await requireWorkspace();
+  requirePermission(permissions, "maintenance.read");
 
   const generator = await db.generator.findFirst({ where: { workspaceId: workspace.id } });
 
@@ -31,7 +31,7 @@ export default async function MaintenancePage() {
       : [],
   ]);
 
-  const canCreate = roleHasPermission(role, "maintenance.create");
+  const canCreate = roleHasPermission(permissions, "maintenance.create");
 
   return (
     <div className="flex flex-col gap-6">

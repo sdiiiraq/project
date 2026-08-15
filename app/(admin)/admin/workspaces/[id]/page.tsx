@@ -12,7 +12,7 @@ import { formatMoney } from "@/lib/utils/money";
 import { formatDate } from "@/lib/utils/date";
 
 const ROLE_LABELS: Record<string, string> = {
-  OWNER: "المالك", ADMIN: "مدير", ACCOUNTANT: "محاسب", COLLECTOR: "جابي", MAINTENANCE: "صيانة", VIEWER: "مشاهد",
+  OWNER: "المالك", EMPLOYEE: "موظف",
 };
 
 export default async function AdminWorkspaceDetailPage({ params }: { params: Promise<{ id: string }> }) {

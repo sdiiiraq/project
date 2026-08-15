@@ -9,9 +9,9 @@ export type ActionResult = { error: string } | { success: true };
 
 // بعد إغلاق الشهر، أي تصحيح للعمليات القديمة يجب أن يمر عبر Adjustment وليس تعديلًا مباشرًا.
 export async function closeFinancialPeriod(year: number, month: number): Promise<ActionResult> {
-  const { workspace, role, user } = await requireWorkspace();
+  const { workspace, role, permissions, user } = await requireWorkspace();
   try {
-    requirePermission(role, "billing.manage");
+    requirePermission(permissions, "billing.manage");
   } catch (e) {
     if (e instanceof ForbiddenError) return { error: e.message };
     throw e;

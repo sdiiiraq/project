@@ -1,10 +1,10 @@
 import "server-only";
-import type { MemberRole } from "@prisma/client";
-import { DEFAULT_ROLE_PERMISSIONS } from "./roles";
 import type { PermissionKey } from "./permissions";
 
-export function roleHasPermission(role: MemberRole, permission: PermissionKey): boolean {
-  return DEFAULT_ROLE_PERMISSIONS[role]?.includes(permission) ?? false;
+// permissions هي المجموعة الفعلية المحسوبة للعضو الحالي (requireWorkspace) — كاملة دائمًا للمالك،
+// ومبنية من WorkspaceMemberPermission للموظف. لا يوجد أي فحص يعتمد على "الدور" وحده بعد الآن.
+export function roleHasPermission(permissions: ReadonlySet<PermissionKey>, permission: PermissionKey): boolean {
+  return permissions.has(permission);
 }
 
 export class ForbiddenError extends Error {
@@ -14,8 +14,8 @@ export class ForbiddenError extends Error {
   }
 }
 
-export function requirePermission(role: MemberRole, permission: PermissionKey): void {
-  if (!roleHasPermission(role, permission)) {
+export function requirePermission(permissions: ReadonlySet<PermissionKey>, permission: PermissionKey): void {
+  if (!roleHasPermission(permissions, permission)) {
     throw new ForbiddenError();
   }
 }

@@ -6,8 +6,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CustomerCreateForm } from "./customer-create-form";
 
 export default async function NewCustomerPage() {
-  const { workspace, role } = await requireWorkspace();
-  requirePermission(role, "customers.create");
+  const { workspace, role, permissions } = await requireWorkspace();
+  requirePermission(permissions, "customers.create");
 
   const ws = await db.workspace.findUnique({
     where: { id: workspace.id },

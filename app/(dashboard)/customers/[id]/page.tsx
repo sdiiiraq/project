@@ -25,8 +25,8 @@ const TIER_LABELS: Record<string, string> = {
 
 export default async function CustomerProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { workspace, role } = await requireWorkspace();
-  requirePermission(role, "customers.read");
+  const { workspace, role, permissions } = await requireWorkspace();
+  requirePermission(permissions, "customers.read");
 
   const customer = await db.customer.findFirst({
     where: { id, workspaceId: workspace.id },
@@ -53,8 +53,8 @@ export default async function CustomerProfilePage({ params }: { params: Promise<
   const outstanding = totalDue - totalPaid;
   const lastPayment = customer.payments[0];
 
-  const canRecordPayment = roleHasPermission(role, "payments.create");
-  const canManageSubscription = roleHasPermission(role, "subscriptions.manage");
+  const canRecordPayment = roleHasPermission(permissions, "payments.create");
+  const canManageSubscription = roleHasPermission(permissions, "subscriptions.manage");
 
   return (
     <div className="flex flex-col gap-6">

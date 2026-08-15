@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { Users, Zap, Wallet, TrendingUp, TrendingDown, AlertTriangle, Users2 } from "lucide-react";
 
 export default async function DashboardPage() {
-  const { workspace, role } = await requireWorkspace();
+  const { workspace, role, permissions } = await requireWorkspace();
   const [generator, stats] = await Promise.all([
     db.generator.findFirst({ where: { workspaceId: workspace.id } }),
     getDashboardStats(workspace.id),
@@ -26,7 +26,7 @@ export default async function DashboardPage() {
       })
     : null;
 
-  const canManageGenerator = roleHasPermission(role, "generator.manage");
+  const canManageGenerator = roleHasPermission(permissions, "generator.manage");
 
   const TONES = {
     primary: "bg-primary/15 text-primary",

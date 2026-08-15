@@ -3,7 +3,10 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
 import { getActiveImpersonation } from "@/lib/auth/impersonation";
+import { PERMISSIONS, type PermissionKey } from "@/lib/rbac/permissions";
 import type { MemberRole } from "@prisma/client";
+
+const ALL_PERMISSIONS = new Set(Object.keys(PERMISSIONS) as PermissionKey[]);
 
 export async function getAuthUser() {
   const supabase = await createClient();
@@ -28,6 +31,15 @@ export async function getCurrentMembership(userId: string) {
   });
 }
 
+// المالك يملك كل الصلاحيات دائمًا. الموظف صلاحياته محصورة بما مُنح له فعليًا (WorkspaceMemberPermission)
+// — لا افتراضات، ولا يمكن لموظف تصعيد صلاحياته بنفسه لأن هذه المجموعة تُحسب من قاعدة البيانات فقط.
+async function computePermissions(role: MemberRole, memberId: string | null): Promise<Set<PermissionKey>> {
+  if (role === "OWNER") return ALL_PERMISSIONS;
+  if (!memberId) return new Set();
+  const grants = await db.workspaceMemberPermission.findMany({ where: { memberId }, select: { permissionKey: true } });
+  return new Set(grants.map((g) => g.permissionKey as PermissionKey));
+}
+
 export async function requireWorkspace() {
   const user = await requireAuthUser();
 
@@ -41,6 +53,7 @@ export async function requireWorkspace() {
         membership: null,
         workspace: impersonation.workspace,
         role: "OWNER" as MemberRole,
+        permissions: ALL_PERMISSIONS,
         impersonating: true,
       };
     }
@@ -49,7 +62,9 @@ export async function requireWorkspace() {
   const membership = await getCurrentMembership(user.id);
   if (!membership) redirect("/onboarding");
   if (membership.workspace.status !== "ACTIVE") redirect("/suspended");
-  return { user, membership, workspace: membership.workspace, role: membership.role as MemberRole, impersonating: false };
+  const role = membership.role as MemberRole;
+  const permissions = await computePermissions(role, membership.id);
+  return { user, membership, workspace: membership.workspace, role, permissions, impersonating: false };
 }
 
 export async function requirePlatformAdmin() {

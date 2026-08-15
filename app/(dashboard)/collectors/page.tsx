@@ -9,13 +9,18 @@ import { formatMoney } from "@/lib/utils/money";
 import { UserCog } from "lucide-react";
 
 export default async function CollectorsPage() {
-  const { workspace, role } = await requireWorkspace();
-  requirePermission(role, "collectors.manage");
+  const { workspace, role, permissions } = await requireWorkspace();
+  requirePermission(permissions, "collectors.manage");
 
-  const [collectorMembers, customers] = await Promise.all([
-    db.workspaceMember.findMany({ where: { workspaceId: workspace.id, role: "COLLECTOR" }, include: { user: true } }),
+  const [members, customers] = await Promise.all([
+    db.workspaceMember.findMany({
+      where: { workspaceId: workspace.id, role: "EMPLOYEE" },
+      include: { user: true, permissions: true },
+    }),
     db.customer.findMany({ where: { workspaceId: workspace.id, deletedAt: null }, select: { id: true, name: true } }),
   ]);
+  // "جابي" لم يعد دورًا مستقلًا — أي موظف يملك صلاحية "تسجيل دفعة" يظهر هنا كجابٍ يمكن تعيين مشتركين له.
+  const collectorMembers = members.filter((m) => m.permissions.some((p) => p.permissionKey === "payments.create"));
 
   const collectors = await Promise.all(
     collectorMembers.map(async (member) => {
@@ -59,7 +64,7 @@ export default async function CollectorsPage() {
             <UserCog className="h-10 w-10 text-muted-foreground" />
             <p className="font-medium">لا يوجد جباة بعد</p>
             <p className="max-w-sm text-sm text-muted-foreground">
-              أضف عضوًا بدور «جابي» من صفحة الإعدادات، ثم عيّن له المشتركين من هنا.
+              امنح موظفًا صلاحية «تسجيل دفعة» من الإعدادات → فريق العمل، ثم عيّن له المشتركين من هنا.
             </p>
           </CardContent>
         </Card>

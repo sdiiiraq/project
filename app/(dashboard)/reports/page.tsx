@@ -19,8 +19,8 @@ export default async function ReportsPage({
   searchParams: Promise<{ type?: string; from?: string; to?: string }>;
 }) {
   const params = await searchParams;
-  const { workspace, role } = await requireWorkspace();
-  requirePermission(role, "reports.read");
+  const { workspace, role, permissions } = await requireWorkspace();
+  requirePermission(permissions, "reports.read");
 
   const type = (params.type && params.type in REPORT_LABELS ? params.type : "collection") as ReportType;
   const from = params.from ?? firstDayOfMonth();

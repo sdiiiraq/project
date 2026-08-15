@@ -12,9 +12,9 @@ export async function createExpense(input: unknown): Promise<ActionResult> {
   const parsed = createExpenseSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
 
-  const { workspace, role, user } = await requireWorkspace();
+  const { workspace, role, permissions, user } = await requireWorkspace();
   try {
-    requirePermission(role, "expenses.create");
+    requirePermission(permissions, "expenses.create");
   } catch (e) {
     if (e instanceof ForbiddenError) return { error: e.message };
     throw e;

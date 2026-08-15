@@ -11,8 +11,8 @@ import { formatDate } from "@/lib/utils/date";
 import { Fuel } from "lucide-react";
 
 export default async function FuelPage() {
-  const { workspace, role } = await requireWorkspace();
-  requirePermission(role, "fuel.read");
+  const { workspace, role, permissions } = await requireWorkspace();
+  requirePermission(permissions, "fuel.read");
 
   const [purchases, usages, purchaseAgg, usageAgg] = await Promise.all([
     db.fuelPurchase.findMany({ where: { workspaceId: workspace.id }, orderBy: { date: "desc" }, take: 20 }),
@@ -22,9 +22,9 @@ export default async function FuelPage() {
   ]);
 
   const currentStock = Number(purchaseAgg._sum.quantityLiters ?? 0) - Number(usageAgg._sum.quantityLiters ?? 0);
-  const canCreate = roleHasPermission(role, "fuel.create");
-  const canUpdate = roleHasPermission(role, "fuel.update");
-  const canDelete = roleHasPermission(role, "fuel.delete");
+  const canCreate = roleHasPermission(permissions, "fuel.create");
+  const canUpdate = roleHasPermission(permissions, "fuel.update");
+  const canDelete = roleHasPermission(permissions, "fuel.delete");
 
   type FuelEvent = {
     id: string;

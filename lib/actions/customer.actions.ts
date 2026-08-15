@@ -19,10 +19,10 @@ export async function createCustomer(input: unknown): Promise<ActionResult> {
   const parsed = createCustomerSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
 
-  const { workspace, user, role } = await requireWorkspace();
+  const { workspace, user, role, permissions } = await requireWorkspace();
 
   try {
-    requirePermission(role, "customers.create");
+    requirePermission(permissions, "customers.create");
   } catch (e) {
     if (e instanceof ForbiddenError) return { error: e.message };
     throw e;
@@ -58,9 +58,9 @@ export async function updateCustomer(input: unknown): Promise<ActionResult> {
   const parsed = updateCustomerSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
 
-  const { workspace, role } = await requireWorkspace();
+  const { workspace, role, permissions } = await requireWorkspace();
   try {
-    requirePermission(role, "customers.update");
+    requirePermission(permissions, "customers.update");
   } catch (e) {
     if (e instanceof ForbiddenError) return { error: e.message };
     throw e;
@@ -81,9 +81,9 @@ export async function changeCustomerStatus(input: unknown): Promise<ActionResult
   const parsed = changeCustomerStatusSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
 
-  const { workspace, role, user } = await requireWorkspace();
+  const { workspace, role, permissions, user } = await requireWorkspace();
   try {
-    requirePermission(role, "customers.update");
+    requirePermission(permissions, "customers.update");
   } catch (e) {
     if (e instanceof ForbiddenError) return { error: e.message };
     throw e;
@@ -113,9 +113,9 @@ export async function changeCustomerStatus(input: unknown): Promise<ActionResult
 }
 
 export async function deleteCustomer(customerId: string): Promise<ActionResult> {
-  const { workspace, role, user } = await requireWorkspace();
+  const { workspace, role, permissions, user } = await requireWorkspace();
   try {
-    requirePermission(role, "customers.delete");
+    requirePermission(permissions, "customers.delete");
   } catch (e) {
     if (e instanceof ForbiddenError) return { error: e.message };
     throw e;
@@ -146,9 +146,9 @@ export async function changeAmpere(input: unknown): Promise<ActionResult> {
   const parsed = changeAmpereSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
 
-  const { workspace, role, user } = await requireWorkspace();
+  const { workspace, role, permissions, user } = await requireWorkspace();
   try {
-    requirePermission(role, "subscriptions.manage");
+    requirePermission(permissions, "subscriptions.manage");
   } catch (e) {
     if (e instanceof ForbiddenError) return { error: e.message };
     throw e;

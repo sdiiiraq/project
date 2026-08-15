@@ -13,9 +13,9 @@ export async function recordPayment(input: unknown): Promise<ActionResult> {
   const parsed = recordPaymentSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
 
-  const { workspace, role, user } = await requireWorkspace();
+  const { workspace, role, permissions, user } = await requireWorkspace();
   try {
-    requirePermission(role, "payments.create");
+    requirePermission(permissions, "payments.create");
   } catch (e) {
     if (e instanceof ForbiddenError) return { error: e.message };
     throw e;
@@ -44,9 +44,9 @@ export async function adjustPayment(input: unknown): Promise<ActionResult> {
   const parsed = adjustPaymentSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
 
-  const { workspace, role, user } = await requireWorkspace();
+  const { workspace, role, permissions, user } = await requireWorkspace();
   try {
-    requirePermission(role, "payments.adjust");
+    requirePermission(permissions, "payments.adjust");
   } catch (e) {
     if (e instanceof ForbiddenError) return { error: e.message };
     throw e;

@@ -8,8 +8,8 @@ import { formatDate } from "@/lib/utils/date";
 import { Receipt } from "lucide-react";
 
 export default async function ExpensesPage() {
-  const { workspace, role } = await requireWorkspace();
-  requirePermission(role, "expenses.read");
+  const { workspace, role, permissions } = await requireWorkspace();
+  requirePermission(permissions, "expenses.read");
 
   const [expenses, categories] = await Promise.all([
     db.expense.findMany({
@@ -25,7 +25,7 @@ export default async function ExpensesPage() {
   ]);
 
   const total = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
-  const canCreate = roleHasPermission(role, "expenses.create");
+  const canCreate = roleHasPermission(permissions, "expenses.create");
 
   return (
     <div className="flex flex-col gap-6">

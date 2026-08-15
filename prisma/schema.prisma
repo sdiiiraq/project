@@ -99,13 +99,11 @@ model Workspace {
   @@map("workspaces")
 }
 
+// OWNER يملك كل الصلاحيات دائمًا. EMPLOYEE صلاحياته محددة فرديًا عبر WorkspaceMemberPermission —
+// لا توجد أدوار وسيطة ثابتة (لا "جابي" ولا غيره)؛ المالك يمنح كل موظف صلاحياته بنفسه.
 enum MemberRole {
   OWNER
-  ADMIN
-  ACCOUNTANT
-  COLLECTOR
-  MAINTENANCE
-  VIEWER
+  EMPLOYEE
 }
 
 model WorkspaceMember {
@@ -117,6 +115,8 @@ model WorkspaceMember {
   role        MemberRole
   createdAt   DateTime   @default(now())
 
+  permissions WorkspaceMemberPermission[]
+
   @@unique([workspaceId, userId])
   @@index([userId])
   @@map("workspace_members")
@@ -124,20 +124,25 @@ model WorkspaceMember {
 
 // صلاحية دقيقة واحدة (مثال: customers.create)
 model Permission {
-  key             String           @id
-  description     String
-  rolePermissions RolePermission[]
+  key          String                      @id
+  description  String
+  memberGrants WorkspaceMemberPermission[]
 
   @@map("permissions")
 }
 
-model RolePermission {
-  role           MemberRole
-  permissionKey  String
-  permission     Permission @relation(fields: [permissionKey], references: [key], onDelete: Cascade)
+// منح صلاحية محددة لموظف محدد — يحل محل الأدوار الثابتة القديمة (Role -> Permissions).
+model WorkspaceMemberPermission {
+  id            String          @id @default(uuid()) @db.Uuid
+  memberId      String          @db.Uuid
+  member        WorkspaceMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  permissionKey String
+  permission    Permission      @relation(fields: [permissionKey], references: [key], onDelete: Cascade)
+  createdAt     DateTime        @default(now())
 
-  @@id([role, permissionKey])
-  @@map("role_permissions")
+  @@unique([memberId, permissionKey])
+  @@index([memberId])
+  @@map("workspace_member_permissions")
 }
 
 // ============================================================

@@ -31,8 +31,8 @@ export default async function CustomersPage({
   searchParams: Promise<{ q?: string; page?: string; sort?: string; status?: string }>;
 }) {
   const { q, page: pageParam, sort, status } = await searchParams;
-  const { workspace, role } = await requireWorkspace();
-  requirePermission(role, "customers.read");
+  const { workspace, role, permissions } = await requireWorkspace();
+  requirePermission(permissions, "customers.read");
 
   const page = Math.max(1, Number(pageParam) || 1);
 
@@ -106,7 +106,7 @@ export default async function CustomersPage({
     outstandingByCustomer.map((o) => [o.customerId, Number(o._sum.amount ?? 0) - Number(o._sum.paidAmount ?? 0)]),
   );
 
-  const canCreate = roleHasPermission(role, "customers.create");
+  const canCreate = roleHasPermission(permissions, "customers.create");
   const extraParams = { q, sort, status };
 
   return (

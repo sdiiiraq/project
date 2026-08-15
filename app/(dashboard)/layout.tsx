@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { AppShell } from "@/components/layout/app-shell";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, workspace, role, impersonating } = await requireWorkspace();
+  const { user, workspace, permissions, impersonating } = await requireWorkspace();
   if (!workspace.onboardedAt && !impersonating) redirect("/onboarding");
 
   const [appUser, platformAdmin] = await Promise.all([
@@ -14,7 +14,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <AppShell
-      role={role}
+      permissions={permissions}
       workspaceId={workspace.id}
       workspaceName={workspace.name}
       userId={user.id}

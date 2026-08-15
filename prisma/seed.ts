@@ -1,6 +1,5 @@
-import { PrismaClient, type MemberRole } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { PERMISSIONS } from "../lib/rbac/permissions";
-import { DEFAULT_ROLE_PERMISSIONS } from "../lib/rbac/roles";
 
 const db = new PrismaClient();
 
@@ -24,16 +23,6 @@ async function main() {
     });
   }
 
-  for (const [role, keys] of Object.entries(DEFAULT_ROLE_PERMISSIONS) as [MemberRole, string[]][]) {
-    for (const permissionKey of keys) {
-      await db.rolePermission.upsert({
-        where: { role_permissionKey: { role, permissionKey } },
-        update: {},
-        create: { role, permissionKey },
-      });
-    }
-  }
-
   for (const name of SYSTEM_EXPENSE_CATEGORIES) {
     const exists = await db.expenseCategory.findFirst({ where: { name, isSystem: true, workspaceId: null } });
     if (!exists) {
@@ -41,7 +30,7 @@ async function main() {
     }
   }
 
-  console.log("Seed completed: permissions, role-permissions, system expense categories.");
+  console.log("Seed completed: permissions, system expense categories.");
 }
 
 main()
