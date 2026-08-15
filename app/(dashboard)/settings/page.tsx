@@ -7,6 +7,7 @@ import { GeneratorSettingsForm } from "./generator-settings-form";
 import { AmperePricingSettingsForm } from "./ampere-plans-settings-form";
 import { AddEmployeeDialog } from "@/components/settings/add-employee-dialog";
 import { EditEmployeePermissionsDialog } from "@/components/settings/edit-employee-permissions-dialog";
+import { InstallAppCard } from "@/components/pwa/install-app-card";
 import { permissionLabel } from "@/lib/rbac/permission-groups";
 import type { PermissionKey } from "@/lib/rbac/permissions";
 
@@ -111,6 +112,8 @@ export default async function SettingsPage() {
           })}
         </CardContent>
       </Card>
+
+      <InstallAppCard />
     </div>
   );
 }

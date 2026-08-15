@@ -9,6 +9,7 @@ import { ADMIN_NAV_ITEMS } from "@/lib/admin-navigation";
 import { ADMIN_ICON_MAP } from "./admin-icons";
 import { Sheet, SheetContent, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { Logo } from "@/components/brand/logo";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { signOut } from "@/lib/actions/auth.actions";
 
 export function MobileAdminNav() {
@@ -18,15 +19,17 @@ export function MobileAdminNav() {
   return (
     <header className="flex h-14 items-center justify-between border-b border-border bg-card/90 px-4 backdrop-blur-md lg:hidden">
       <Logo />
-      <Sheet open={open} onOpenChange={setOpen}>
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted/60"
-          aria-label="فتح قائمة الإدارة"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
+      <div className="flex items-center gap-1">
+        <ThemeToggle />
+        <Sheet open={open} onOpenChange={setOpen}>
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted/60"
+            aria-label="فتح قائمة الإدارة"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
         <SheetContent side="bottom" className="pb-8">
           <SheetTitle>إدارة المنصة</SheetTitle>
           <nav className="mt-4 flex flex-col gap-1">
@@ -61,7 +64,8 @@ export function MobileAdminNav() {
             </form>
           </div>
         </SheetContent>
-      </Sheet>
+        </Sheet>
+      </div>
     </header>
   );
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Bell } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { UserMenu } from "./user-menu";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { db } from "@/lib/db";
 
 export async function Header({
@@ -30,6 +31,7 @@ export async function Header({
       </div>
 
       <div className="flex items-center gap-2">
+        <ThemeToggle />
         <Link
           href="/notifications"
           className="relative flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"

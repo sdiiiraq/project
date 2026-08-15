@@ -8,6 +8,7 @@ import { signOut } from "@/lib/actions/auth.actions";
 import { ADMIN_NAV_ITEMS } from "@/lib/admin-navigation";
 import { MobileAdminNav } from "@/components/admin/mobile-admin-nav";
 import { AdminNavLink } from "@/components/admin/admin-nav-link";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 function initials(name: string) {
   return name
@@ -42,7 +43,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <Avatar className="h-8 w-8">
               <AvatarFallback className="bg-secondary text-xs">{initials(appUser?.fullName ?? "") || "؟"}</AvatarFallback>
             </Avatar>
-            <p className="truncate text-sm font-medium">{appUser?.fullName}</p>
+            <p className="min-w-0 flex-1 truncate text-sm font-medium">{appUser?.fullName}</p>
+            <ThemeToggle />
           </div>
           <Link
             href="/dashboard"

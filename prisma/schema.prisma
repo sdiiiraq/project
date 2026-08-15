@@ -318,6 +318,7 @@ model Invoice {
   // يمنع إنشاء فاتورة مكررة لنفس المشترك ونفس فترة الفوترة (Idempotency)
   @@unique([customerId, periodStart, periodEnd])
   @@index([workspaceId, status])
+  @@index([workspaceId, periodStart])
   @@map("invoices")
 }
 
@@ -539,6 +540,7 @@ model MaintenanceRecord {
   createdAt           DateTime  @default(now())
 
   @@index([workspaceId, date])
+  @@index([workspaceId, nextMaintenanceDate])
   @@map("maintenance_records")
 }
 
