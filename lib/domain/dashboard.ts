@@ -24,6 +24,7 @@ export async function getDashboardStats(workspaceId: string) {
     monthInvoices,
     monthExpenses,
     monthFuel,
+    monthMaintenance,
     allOpenInvoices,
     overdueCustomers,
     overdueCount,
@@ -38,6 +39,7 @@ export async function getDashboardStats(workspaceId: string) {
     db.invoice.findMany({ where: { workspaceId, periodStart: { gte: monthStart, lte: monthEnd } } }),
     db.expense.aggregate({ where: { workspaceId, date: { gte: monthStart, lte: monthEnd } }, _sum: { amount: true } }),
     db.fuelPurchase.aggregate({ where: { workspaceId, date: { gte: monthStart, lte: monthEnd } }, _sum: { totalCost: true } }),
+    db.maintenanceRecord.aggregate({ where: { workspaceId, date: { gte: monthStart, lte: monthEnd } }, _sum: { cost: true } }),
     db.invoice.aggregate({ where: { workspaceId, status: { not: "PAID" } }, _sum: { amount: true, paidAmount: true } }),
     db.customer.findMany({
       where: { workspaceId, deletedAt: null, status: "OVERDUE" },
@@ -53,7 +55,8 @@ export async function getDashboardStats(workspaceId: string) {
   const monthCollected = monthInvoices.reduce((sum, i) => sum + Number(i.paidAmount), 0);
   const monthExpensesTotal = Number(monthExpenses._sum.amount ?? 0);
   const monthFuelTotal = Number(monthFuel._sum.totalCost ?? 0);
-  const netProfit = monthCollected - monthExpensesTotal;
+  const monthMaintenanceTotal = Number(monthMaintenance._sum.cost ?? 0);
+  const netProfit = monthCollected - monthExpensesTotal - monthFuelTotal - monthMaintenanceTotal;
   const totalOutstanding = Number(allOpenInvoices._sum.amount ?? 0) - Number(allOpenInvoices._sum.paidAmount ?? 0);
 
   const months = lastNMonths(6, now);

@@ -4,7 +4,6 @@ import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateEquipmentDialog } from "@/components/maintenance/create-equipment-dialog";
 import { CreateMaintenanceDialog } from "@/components/maintenance/create-maintenance-dialog";
-import { OperatingSessionControl } from "@/components/maintenance/operating-session-control";
 import { formatMoney } from "@/lib/utils/money";
 import { Wrench } from "lucide-react";
 
@@ -21,7 +20,7 @@ export default async function MaintenancePage() {
 
   const generator = await db.generator.findFirst({ where: { workspaceId: workspace.id } });
 
-  const [equipment, records, openSession, recentSessions] = await Promise.all([
+  const [equipment, records, recentSessions] = await Promise.all([
     db.equipment.findMany({ where: { workspaceId: workspace.id }, orderBy: { createdAt: "desc" } }),
     db.maintenanceRecord.findMany({
       where: { workspaceId: workspace.id },
@@ -29,9 +28,6 @@ export default async function MaintenancePage() {
       orderBy: { date: "desc" },
       take: 20,
     }),
-    generator
-      ? db.operatingSession.findFirst({ where: { workspaceId: workspace.id, generatorId: generator.id, endTime: null } })
-      : null,
     generator
       ? db.operatingSession.findMany({
           where: { workspaceId: workspace.id, generatorId: generator.id, endTime: { not: null } },
@@ -42,16 +38,12 @@ export default async function MaintenancePage() {
   ]);
 
   const canCreate = roleHasPermission(role, "maintenance.create");
-  const canOperate = roleHasPermission(role, "generator.manage");
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">الصيانة</h1>
-          <p className="text-sm text-muted-foreground">{equipment.length} معدة مسجّلة</p>
-        </div>
-        {canOperate && <OperatingSessionControl openSessionId={openSession?.id ?? null} />}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">الصيانة</h1>
+        <p className="text-sm text-muted-foreground">{equipment.length} معدة مسجّلة</p>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">

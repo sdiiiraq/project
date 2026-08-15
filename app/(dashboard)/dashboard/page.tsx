@@ -44,18 +44,11 @@ export default async function DashboardPage() {
     { label: "المشتركين الفعالين", value: String(stats.activeCustomerCount), icon: Users2, tone: "success" as const },
     { label: "مجموع الأمبيرات", value: `${stats.totalAmperes} أمبير`, icon: Zap, tone: "warning" as const },
     {
-      label: "المطلوب هذا الشهر",
-      value: formatMoney(stats.monthDue),
-      icon: Wallet,
-      tone: "primary" as const,
-      hint: "مجموع فواتير الشهر الحالي لكل المشتركين",
-    },
-    {
       label: "المحصّل هذا الشهر",
       value: formatMoney(stats.monthCollected),
       icon: TrendingUp,
       tone: "success" as const,
-      hint: "المبلغ الذي تم استلامه فعليًا هذا الشهر",
+      hint: "مبلغ اشتراكات الأمبير الذي تم استلامه فعليًا هذا الشهر",
     },
     {
       label: "المتبقي الكلي",
@@ -64,12 +57,20 @@ export default async function DashboardPage() {
       tone: "destructive" as const,
       hint: "ديون متأخرة من هذا الشهر وأشهر سابقة لم تُحصّل بعد",
     },
+    {
+      label: "المطلوب هذا الشهر",
+      value: formatMoney(stats.monthDue),
+      icon: Wallet,
+      tone: "primary" as const,
+      hint: "مجموع فواتير اشتراكات الأمبير للشهر الحالي",
+    },
     { label: "المصروفات هذا الشهر", value: formatMoney(stats.monthExpensesTotal), icon: TrendingDown, tone: "destructive" as const },
     {
       label: "صافي الربح هذا الشهر",
       value: formatMoney(stats.netProfit),
       icon: TrendingUp,
       tone: stats.netProfit >= 0 ? ("success" as const) : ("destructive" as const),
+      hint: "المحصّل بعد خصم المصاريف والوقود والصيانة",
     },
   ];
 
@@ -104,18 +105,18 @@ export default async function DashboardPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="flex flex-col gap-3">
         {kpis.map((kpi) => (
           <Card key={kpi.label}>
-            <CardContent className="flex flex-col gap-3 p-4">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-muted-foreground">{kpi.label}</p>
-                <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl", TONES[kpi.tone])}>
-                  <kpi.icon className="h-[18px] w-[18px]" />
-                </div>
+            <CardContent className="flex flex-row-reverse items-center gap-4 p-4">
+              <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-xl", TONES[kpi.tone])}>
+                <kpi.icon className="h-5 w-5" />
               </div>
-              <p className="text-2xl font-bold tracking-tight">{kpi.value}</p>
-              {"hint" in kpi && kpi.hint && <p className="text-xs text-muted-foreground">{kpi.hint}</p>}
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-muted-foreground">{kpi.label}</p>
+                <p className="text-xl font-bold tracking-tight sm:text-2xl">{kpi.value}</p>
+                {"hint" in kpi && kpi.hint && <p className="mt-0.5 text-xs text-muted-foreground">{kpi.hint}</p>}
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -130,8 +131,8 @@ export default async function DashboardPage() {
               {stats.overdueCount > 0 && (
                 <p>
                   يوجد <span className="font-semibold text-foreground">{stats.overdueCount}</span> مشترك متأخر عن الدفع —{" "}
-                  <Link href="/collections" className="font-medium text-primary hover:underline">
-                    عرض الجباية
+                  <Link href="/customers" className="font-medium text-primary hover:underline">
+                    عرض المشتركين
                   </Link>
                 </p>
               )}

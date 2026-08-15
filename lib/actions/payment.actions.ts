@@ -34,7 +34,6 @@ export async function recordPayment(input: unknown): Promise<ActionResult> {
     note: parsed.data.note,
   });
 
-  revalidatePath("/collections");
   revalidatePath(`/customers/${parsed.data.customerId}`);
   revalidatePath("/dashboard");
   return { success: true };
