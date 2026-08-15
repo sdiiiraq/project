@@ -10,6 +10,7 @@ import { RecordPaymentDialog } from "@/components/customers/record-payment-dialo
 import { ChangeAmpereDialog } from "@/components/customers/change-ampere-dialog";
 import { EditCustomerDialog } from "@/components/customers/edit-customer-dialog";
 import { DeleteCustomerDialog } from "@/components/customers/delete-customer-dialog";
+import { ContactActions } from "@/components/customers/contact-actions";
 import { formatMoney } from "@/lib/utils/money";
 import { formatDate } from "@/lib/utils/date";
 import { MapPin, Phone, Zap, Tag } from "lucide-react";
@@ -147,8 +148,11 @@ export default async function CustomerProfilePage({ params }: { params: Promise<
         <TabsContent value="info">
           <Card>
             <CardContent className="grid gap-4 p-5 sm:grid-cols-2">
-              <div className="flex items-center gap-2 text-sm">
-                <Phone className="h-4 w-4 text-muted-foreground" /> {customer.phone ?? "—"}
+              <div className="flex items-center justify-between gap-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-muted-foreground" /> {customer.phone ?? "—"}
+                </div>
+                <ContactActions phone={customer.phone} />
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <MapPin className="h-4 w-4 text-muted-foreground" />

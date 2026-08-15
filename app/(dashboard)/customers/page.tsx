@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { CustomerStatusBadge } from "@/components/customers/status-badge";
+import { ContactActions } from "@/components/customers/contact-actions";
 import { PaymentStatusTabs } from "@/components/customers/payment-status-tabs";
 import { SearchInput } from "@/components/shared/search-input";
 import { SortSelect } from "@/components/shared/sort-select";
@@ -176,11 +177,14 @@ export default async function CustomersPage({
                       <CustomerStatusBadge status={customer.status} />
                     </TableCell>
                     <TableCell className="text-end">
-                      <Button asChild variant="ghost" size="sm">
-                        <Link href={`/customers/${customer.id}`}>
-                          فتح الملف <ChevronLeft className="h-4 w-4" />
-                        </Link>
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <ContactActions phone={customer.phone} />
+                        <Button asChild variant="ghost" size="sm">
+                          <Link href={`/customers/${customer.id}`}>
+                            فتح الملف <ChevronLeft className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -191,20 +195,21 @@ export default async function CustomersPage({
           {/* Mobile/Tablet: بطاقات */}
           <div className="flex flex-col gap-3 lg:hidden">
             {customers.map((customer) => (
-              <Link key={customer.id} href={`/customers/${customer.id}`}>
-                <Card>
-                  <CardContent className="flex items-center justify-between gap-3 p-4">
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">{customer.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {customer.subscriptions[0]?.amperes ?? "—"} أمبير · #{customer.subscriberNumber}
-                      </p>
-                      <p className="mt-1 text-sm">المتبقي: {formatMoney(outstandingMap.get(customer.id) ?? 0)}</p>
-                    </div>
+              <Card key={customer.id}>
+                <CardContent className="flex items-center justify-between gap-3 p-4">
+                  <Link href={`/customers/${customer.id}`} className="min-w-0 flex-1">
+                    <p className="truncate font-medium">{customer.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {customer.subscriptions[0]?.amperes ?? "—"} أمبير · #{customer.subscriberNumber}
+                    </p>
+                    <p className="mt-1 text-sm">المتبقي: {formatMoney(outstandingMap.get(customer.id) ?? 0)}</p>
+                  </Link>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <ContactActions phone={customer.phone} />
                     <CustomerStatusBadge status={customer.status} />
-                  </CardContent>
-                </Card>
-              </Link>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
 
