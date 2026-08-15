@@ -19,7 +19,8 @@ export default async function OnboardingPage() {
           region: generator?.region ?? workspace.region ?? "",
           address: generator?.address ?? workspace.address ?? "",
         }}
-        initialAmperePrice={Number(workspace.amperePriceIQD ?? 0)}
+        initialNormalPrice={Number(workspace.normalAmperePriceIQD ?? 0)}
+        initialGoldPrice={Number(workspace.goldAmperePriceIQD ?? 0)}
       />
     </div>
   );

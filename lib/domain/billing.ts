@@ -1,5 +1,5 @@
 import "server-only";
-import { Prisma, type PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient, type SubscriptionTier } from "@prisma/client";
 import { db } from "@/lib/db";
 import { notifyWorkspace } from "@/lib/domain/notifications";
 
@@ -30,20 +30,22 @@ export async function nextSubscriberNumber(tx: Tx, workspaceId: string): Promise
   return String(count + 1).padStart(4, "0");
 }
 
-// يُنشئ (أو يُحدّث) سجل AmperePlan "ظليّ" مخصص لعدد الأمبيرات المُدخل يدويًا، بالسعر المحسوب من
-// سعر الأمبير الواحد في إعدادات الـ Workspace — يحافظ على العلاقة الحالية CustomerSubscription -> AmperePlan
-// دون الحاجة لتغيير المخطط الأساسي أو حصر المستخدم بباقات محددة مسبقًا.
-async function resolveAmperePlanByAmperes(tx: Tx, workspaceId: string, amperes: number) {
+// يُنشئ (أو يُحدّث) سجل AmperePlan "ظليّ" مخصص لعدد الأمبيرات المُدخل يدويًا ونوع الاشتراك (عادي/ذهبي)،
+// بالسعر المحسوب من سعر الأمبير المطابق في إعدادات الـ Workspace — يحافظ على العلاقة الحالية
+// CustomerSubscription -> AmperePlan دون الحاجة لتغيير المخطط الأساسي أو حصر المستخدم بباقات محددة مسبقًا.
+async function resolveAmperePlanByAmperes(tx: Tx, workspaceId: string, amperes: number, tier: SubscriptionTier) {
   const workspace = await tx.workspace.findUniqueOrThrow({ where: { id: workspaceId } });
-  if (!workspace.amperePriceIQD || Number(workspace.amperePriceIQD) <= 0) {
-    throw new Error("لم يتم تحديد سعر الأمبير الواحد بعد. اذهب إلى الإعدادات وحدده أولًا.");
+  const price = tier === "GOLD" ? workspace.goldAmperePriceIQD : workspace.normalAmperePriceIQD;
+  if (!price || Number(price) <= 0) {
+    const label = tier === "GOLD" ? "الذهبي" : "العادي";
+    throw new Error(`لم يتم تحديد سعر الأمبير ${label} بعد. اذهب إلى الإعدادات وحدده أولًا.`);
   }
-  const monthlyPrice = Math.round(Number(workspace.amperePriceIQD) * amperes);
+  const monthlyPrice = Math.round(Number(price) * amperes);
 
   return tx.amperePlan.upsert({
-    where: { workspaceId_amperes_isCustom: { workspaceId, amperes, isCustom: true } },
+    where: { workspaceId_amperes_isCustom_tier: { workspaceId, amperes, isCustom: true, tier } },
     update: { monthlyPrice, isActive: true },
-    create: { workspaceId, amperes, monthlyPrice, isCustom: true },
+    create: { workspaceId, amperes, tier, monthlyPrice, isCustom: true },
   });
 }
 
@@ -59,9 +61,11 @@ export async function createCustomerWithSubscription(params: {
   houseNumber?: string;
   notes?: string;
   amperes: number;
+  tier: SubscriptionTier;
+  customerType: "RESIDENTIAL" | "COMMERCIAL" | "NORMAL";
 }) {
   return db.$transaction(async (tx) => {
-    const plan = await resolveAmperePlanByAmperes(tx, params.workspaceId, params.amperes);
+    const plan = await resolveAmperePlanByAmperes(tx, params.workspaceId, params.amperes, params.tier);
 
     const subscriberNumber = await nextSubscriberNumber(tx, params.workspaceId);
     const now = new Date();
@@ -78,6 +82,7 @@ export async function createCustomerWithSubscription(params: {
         alley: params.alley,
         houseNumber: params.houseNumber,
         notes: params.notes,
+        customerType: params.customerType,
         status: "ACTIVE",
       },
     });
@@ -87,6 +92,7 @@ export async function createCustomerWithSubscription(params: {
         customerId: customer.id,
         amperePlanId: plan.id,
         amperes: plan.amperes,
+        tier: plan.tier,
         price: plan.monthlyPrice,
         startDate: now,
         status: "ACTIVE",
@@ -128,10 +134,11 @@ export async function changeCustomerAmpere(params: {
   actorUserId: string;
   customerId: string;
   amperes: number;
+  tier: SubscriptionTier;
   reason?: string;
 }) {
   return db.$transaction(async (tx) => {
-    const plan = await resolveAmperePlanByAmperes(tx, params.workspaceId, params.amperes);
+    const plan = await resolveAmperePlanByAmperes(tx, params.workspaceId, params.amperes, params.tier);
 
     const subscription = await tx.customerSubscription.findFirstOrThrow({
       where: { customerId: params.customerId, status: "ACTIVE" },
@@ -154,7 +161,7 @@ export async function changeCustomerAmpere(params: {
 
     const updated = await tx.customerSubscription.update({
       where: { id: subscription.id },
-      data: { amperePlanId: plan.id, amperes: plan.amperes, price: plan.monthlyPrice },
+      data: { amperePlanId: plan.id, amperes: plan.amperes, tier: plan.tier, price: plan.monthlyPrice },
     });
 
     await tx.auditLog.create({

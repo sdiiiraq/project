@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { createCustomerSchema, type CreateCustomerInput } from "@/lib/validation/customer";
@@ -10,9 +10,22 @@ import { createCustomer } from "@/lib/actions/customer.actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatMoney } from "@/lib/utils/money";
 
-export function CustomerCreateForm({ pricePerAmpere }: { pricePerAmpere: number }) {
+const CUSTOMER_TYPE_OPTIONS = [
+  { value: "NORMAL", label: "عادي" },
+  { value: "RESIDENTIAL", label: "سكني" },
+  { value: "COMMERCIAL", label: "تجاري" },
+] as const;
+
+export function CustomerCreateForm({
+  normalPrice,
+  goldPrice,
+}: {
+  normalPrice: number;
+  goldPrice: number;
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const {
@@ -20,10 +33,16 @@ export function CustomerCreateForm({ pricePerAmpere }: { pricePerAmpere: number 
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<CreateCustomerInput>({ resolver: zodResolver(createCustomerSchema) });
+  } = useForm<CreateCustomerInput>({
+    resolver: zodResolver(createCustomerSchema),
+    defaultValues: { customerType: "NORMAL", tier: "NORMAL" },
+  });
 
   const amperesValue = useWatch({ control, name: "amperes" });
+  const tierValue = useWatch({ control, name: "tier" });
+  const pricePerAmpere = tierValue === "GOLD" ? goldPrice : normalPrice;
   const computedPrice = Number(amperesValue) > 0 ? Number(amperesValue) * pricePerAmpere : 0;
+  const canSubmit = pricePerAmpere > 0;
 
   async function onSubmit(values: CreateCustomerInput) {
     setLoading(true);
@@ -47,6 +66,48 @@ export function CustomerCreateForm({ pricePerAmpere }: { pricePerAmpere: number 
         <Input id="phone" dir="ltr" placeholder="07xxxxxxxxx" {...register("phone")} />
       </div>
 
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <Label>نوع المشترك</Label>
+          <Controller
+            control={control}
+            name="customerType"
+            render={({ field }) => (
+              <Select onValueChange={field.onChange} value={field.value}>
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر نوع المشترك" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CUSTOMER_TYPE_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label>نوع الاشتراك</Label>
+          <Controller
+            control={control}
+            name="tier"
+            render={({ field }) => (
+              <Select onValueChange={field.onChange} value={field.value}>
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر نوع الاشتراك" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="NORMAL">عادي</SelectItem>
+                  <SelectItem value="GOLD">ذهبي</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
+        </div>
+      </div>
+
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="amperes">عدد الأمبيرات</Label>
         <Input id="amperes" type="number" min={1} inputMode="numeric" {...register("amperes")} />
@@ -54,8 +115,13 @@ export function CustomerCreateForm({ pricePerAmpere }: { pricePerAmpere: number 
         <p className="text-xs text-muted-foreground">
           السعر الشهري:{" "}
           <span className="font-medium text-foreground">{computedPrice > 0 ? formatMoney(computedPrice) : "—"}</span>
-          {" "}(بسعر {formatMoney(pricePerAmpere)} لكل أمبير)
+          {pricePerAmpere > 0 && <> (بسعر {formatMoney(pricePerAmpere)} لكل أمبير)</>}
         </p>
+        {!canSubmit && (
+          <p className="text-xs text-warning">
+            لم يتم تحديد سعر الأمبير {tierValue === "GOLD" ? "الذهبي" : "العادي"} بعد. حدده من الإعدادات أولًا.
+          </p>
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -82,7 +148,7 @@ export function CustomerCreateForm({ pricePerAmpere }: { pricePerAmpere: number 
         <Input id="notes" {...register("notes")} />
       </div>
 
-      <Button type="submit" size="lg" disabled={loading || pricePerAmpere <= 0}>
+      <Button type="submit" size="lg" disabled={loading || !canSubmit}>
         {loading ? "جارٍ الحفظ..." : "إضافة المشترك"}
       </Button>
     </form>

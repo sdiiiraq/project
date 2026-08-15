@@ -53,7 +53,10 @@ export async function savePricePerAmpere(input: unknown): Promise<ActionResult> 
 
   await db.workspace.update({
     where: { id: workspace.id },
-    data: { amperePriceIQD: parsed.data.amperePriceIQD },
+    data: {
+      normalAmperePriceIQD: parsed.data.normalAmperePriceIQD,
+      goldAmperePriceIQD: parsed.data.goldAmperePriceIQD,
+    },
   });
 
   revalidatePath("/onboarding");

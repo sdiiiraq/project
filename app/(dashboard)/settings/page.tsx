@@ -21,7 +21,7 @@ export default async function SettingsPage() {
 
   const [generator, ws, members] = await Promise.all([
     db.generator.findFirst({ where: { workspaceId: workspace.id } }),
-    db.workspace.findUnique({ where: { id: workspace.id }, select: { amperePriceIQD: true } }),
+    db.workspace.findUnique({ where: { id: workspace.id }, select: { normalAmperePriceIQD: true, goldAmperePriceIQD: true } }),
     db.workspaceMember.findMany({ where: { workspaceId: workspace.id }, include: { user: true }, orderBy: { createdAt: "asc" } }),
   ]);
 
@@ -51,11 +51,14 @@ export default async function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>سعر الأمبير</CardTitle>
-          <CardDescription>حدد سعر الأمبير الواحد، ويُحسب اشتراك كل مشترك تلقائيًا حسب عدد أمبيراته.</CardDescription>
+          <CardTitle>أسعار الأمبير</CardTitle>
+          <CardDescription>حدد سعر الأمبير العادي والذهبي، ويُحسب اشتراك كل مشترك تلقائيًا حسب نوعه وعدد أمبيراته.</CardDescription>
         </CardHeader>
         <CardContent>
-          <AmperePricingSettingsForm initialPrice={Number(ws?.amperePriceIQD ?? 0)} />
+          <AmperePricingSettingsForm
+            initialNormalPrice={Number(ws?.normalAmperePriceIQD ?? 0)}
+            initialGoldPrice={Number(ws?.goldAmperePriceIQD ?? 0)}
+          />
         </CardContent>
       </Card>
 

@@ -163,6 +163,7 @@ export async function changeAmpere(input: unknown): Promise<ActionResult> {
       actorUserId: user.id,
       customerId: parsed.data.customerId,
       amperes: parsed.data.amperes,
+      tier: parsed.data.tier,
       reason: parsed.data.reason,
     });
 

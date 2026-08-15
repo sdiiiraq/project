@@ -31,11 +31,13 @@ const STEP_TITLES = ["اسم المولدة", "معلومات المولدة", "
 export function OnboardingWizard({
   workspaceName,
   generatorInfo,
-  initialAmperePrice,
+  initialNormalPrice,
+  initialGoldPrice,
 }: {
   workspaceName: string;
   generatorInfo: { ownerName: string; phone: string; region: string; address: string };
-  initialAmperePrice: number;
+  initialNormalPrice: number;
+  initialGoldPrice: number;
 }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -58,7 +60,12 @@ export function OnboardingWizard({
         <StepInfo defaultValues={generatorInfo} onBack={() => setStep(0)} onNext={() => setStep(2)} />
       )}
       {step === 2 && (
-        <StepPricing defaultPrice={initialAmperePrice} onBack={() => setStep(1)} onNext={() => setStep(3)} />
+        <StepPricing
+          defaultNormalPrice={initialNormalPrice}
+          defaultGoldPrice={initialGoldPrice}
+          onBack={() => setStep(1)}
+          onNext={() => setStep(3)}
+        />
       )}
       {step === 3 && <StepFirstCustomer onBack={() => setStep(2)} onNext={() => setStep(4)} />}
       {step === 4 && (
@@ -164,11 +171,13 @@ function StepInfo({
 }
 
 function StepPricing({
-  defaultPrice,
+  defaultNormalPrice,
+  defaultGoldPrice,
   onBack,
   onNext,
 }: {
-  defaultPrice: number;
+  defaultNormalPrice: number;
+  defaultGoldPrice: number;
   onBack: () => void;
   onNext: () => void;
 }) {
@@ -179,7 +188,10 @@ function StepPricing({
     formState: { errors },
   } = useForm<PricePerAmpereInput>({
     resolver: zodResolver(pricePerAmpereSchema),
-    defaultValues: { amperePriceIQD: defaultPrice > 0 ? defaultPrice : 10000 },
+    defaultValues: {
+      normalAmperePriceIQD: defaultNormalPrice > 0 ? defaultNormalPrice : 10000,
+      goldAmperePriceIQD: defaultGoldPrice > 0 ? defaultGoldPrice : 12000,
+    },
   });
 
   async function onSubmit(values: PricePerAmpereInput) {
@@ -193,13 +205,18 @@ function StepPricing({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
       <p className="text-sm text-muted-foreground">
-        حدد سعر الأمبير الواحد شهريًا. عند إضافة مشترك تختار عدد الأمبيرات فقط ويُحسب السعر تلقائيًا. يمكنك تعديل
-        السعر لاحقًا من الإعدادات.
+        حدد سعر الأمبير الواحد شهريًا لكل نوع اشتراك. عند إضافة مشترك تختار عدد الأمبيرات ونوع الاشتراك ويُحسب
+        السعر تلقائيًا. يمكنك تعديل السعرين لاحقًا من الإعدادات.
       </p>
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="amperePriceIQD">سعر الأمبير الواحد شهريًا (د.ع)</Label>
-        <Input id="amperePriceIQD" type="number" min={1} inputMode="numeric" {...register("amperePriceIQD")} />
-        {errors.amperePriceIQD && <p className="text-xs text-destructive">{errors.amperePriceIQD.message}</p>}
+        <Label htmlFor="normalAmperePriceIQD">سعر الأمبير العادي شهريًا (د.ع)</Label>
+        <Input id="normalAmperePriceIQD" type="number" min={1} inputMode="numeric" {...register("normalAmperePriceIQD")} />
+        {errors.normalAmperePriceIQD && <p className="text-xs text-destructive">{errors.normalAmperePriceIQD.message}</p>}
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="goldAmperePriceIQD">سعر الأمبير الذهبي شهريًا (د.ع)</Label>
+        <Input id="goldAmperePriceIQD" type="number" min={1} inputMode="numeric" {...register("goldAmperePriceIQD")} />
+        {errors.goldAmperePriceIQD && <p className="text-xs text-destructive">{errors.goldAmperePriceIQD.message}</p>}
       </div>
       <div className="flex gap-3">
         <Button type="button" variant="outline" size="lg" onClick={onBack} className="flex-1">
@@ -238,7 +255,7 @@ function StepDone({ onFinish }: { onFinish: () => void }) {
       <CheckCircle2 className="h-12 w-12 text-success" />
       <h2 className="text-2xl font-bold tracking-tight md:text-3xl">مولدتك جاهزة.</h2>
       <p className="text-sm text-muted-foreground">
-        تم تجهيز حسابك — ابدأ بإضافة المشتركين وتسجيل الجباية من لوحة التحكم.
+        تم تجهيز حسابك — ابدأ بإضافة المشتركين وتسجيل الدفعات من لوحة التحكم.
       </p>
       <Button
         size="lg"

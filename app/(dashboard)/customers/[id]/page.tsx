@@ -10,7 +10,18 @@ import { RecordPaymentDialog } from "@/components/customers/record-payment-dialo
 import { ChangeAmpereDialog } from "@/components/customers/change-ampere-dialog";
 import { formatMoney } from "@/lib/utils/money";
 import { formatDate } from "@/lib/utils/date";
-import { MapPin, Phone, Zap } from "lucide-react";
+import { MapPin, Phone, Zap, Tag } from "lucide-react";
+
+const CUSTOMER_TYPE_LABELS: Record<string, string> = {
+  RESIDENTIAL: "سكني",
+  COMMERCIAL: "تجاري",
+  NORMAL: "عادي",
+};
+
+const TIER_LABELS: Record<string, string> = {
+  NORMAL: "عادي",
+  GOLD: "ذهبي",
+};
 
 export default async function CustomerProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -29,8 +40,12 @@ export default async function CustomerProfilePage({ params }: { params: Promise<
 
   if (!customer) notFound();
 
-  const ws = await db.workspace.findUnique({ where: { id: workspace.id }, select: { amperePriceIQD: true } });
-  const pricePerAmpere = Number(ws?.amperePriceIQD ?? 0);
+  const ws = await db.workspace.findUnique({
+    where: { id: workspace.id },
+    select: { normalAmperePriceIQD: true, goldAmperePriceIQD: true },
+  });
+  const normalPrice = Number(ws?.normalAmperePriceIQD ?? 0);
+  const goldPrice = Number(ws?.goldAmperePriceIQD ?? 0);
 
   const activeSubscription = customer.subscriptions[0];
   const totalDue = customer.invoices.reduce((sum, inv) => sum + Number(inv.amount), 0);
@@ -56,7 +71,9 @@ export default async function CustomerProfilePage({ params }: { params: Promise<
             <ChangeAmpereDialog
               customerId={customer.id}
               currentAmperes={activeSubscription?.amperes ?? 0}
-              pricePerAmpere={pricePerAmpere}
+              currentTier={activeSubscription?.tier ?? "NORMAL"}
+              normalPrice={normalPrice}
+              goldPrice={goldPrice}
             />
           )}
           {canRecordPayment && <RecordPaymentDialog customerId={customer.id} outstanding={outstanding} />}
@@ -109,7 +126,13 @@ export default async function CustomerProfilePage({ params }: { params: Promise<
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <Zap className="h-4 w-4 text-muted-foreground" />
-                {activeSubscription ? `${activeSubscription.amperes} أمبير — ${formatMoney(Number(activeSubscription.price))} شهريًا` : "لا يوجد اشتراك فعّال"}
+                {activeSubscription
+                  ? `${activeSubscription.amperes} أمبير (${TIER_LABELS[activeSubscription.tier]}) — ${formatMoney(Number(activeSubscription.price))} شهريًا`
+                  : "لا يوجد اشتراك فعّال"}
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Tag className="h-4 w-4 text-muted-foreground" />
+                نوع المشترك: {CUSTOMER_TYPE_LABELS[customer.customerType]}
               </div>
               {customer.notes && <p className="text-sm text-muted-foreground sm:col-span-2">{customer.notes}</p>}
             </CardContent>

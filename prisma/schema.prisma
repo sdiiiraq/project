@@ -64,7 +64,8 @@ model Workspace {
   status    WorkspaceStatus @default(ACTIVE)
   region    String?
   address   String?
-  amperePriceIQD Decimal?   @db.Decimal(14, 2)
+  normalAmperePriceIQD Decimal? @db.Decimal(14, 2)
+  goldAmperePriceIQD   Decimal? @db.Decimal(14, 2)
   onboardedAt DateTime?
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
@@ -166,18 +167,19 @@ model Generator {
 
 // أسعار الأمبيرات (Database-driven, لكل Workspace)
 model AmperePlan {
-  id           String   @id @default(uuid()) @db.Uuid
-  workspaceId  String   @db.Uuid
-  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  id           String           @id @default(uuid()) @db.Uuid
+  workspaceId  String           @db.Uuid
+  workspace    Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   amperes      Int
-  monthlyPrice Decimal  @db.Decimal(14, 2)
-  isCustom     Boolean  @default(false)
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
+  tier         SubscriptionTier @default(NORMAL)
+  monthlyPrice Decimal          @db.Decimal(14, 2)
+  isCustom     Boolean          @default(false)
+  isActive     Boolean          @default(true)
+  createdAt    DateTime         @default(now())
 
   subscriptions CustomerSubscription[]
 
-  @@unique([workspaceId, amperes, isCustom])
+  @@unique([workspaceId, amperes, isCustom, tier])
   @@index([workspaceId])
   @@map("ampere_plans")
 }
@@ -187,6 +189,17 @@ enum CustomerStatus {
   OVERDUE
   SUSPENDED
   DISCONNECTED
+}
+
+enum CustomerType {
+  RESIDENTIAL // سكني
+  COMMERCIAL  // تجاري
+  NORMAL      // عادي
+}
+
+enum SubscriptionTier {
+  NORMAL // عادي
+  GOLD   // ذهبي
 }
 
 model Customer {
@@ -203,6 +216,7 @@ model Customer {
   alley            String?
   houseNumber      String?
   notes            String?
+  customerType     CustomerType   @default(NORMAL)
   status           CustomerStatus @default(ACTIVE)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
@@ -253,6 +267,7 @@ model CustomerSubscription {
   amperePlanId String             @db.Uuid
   amperePlan   AmperePlan         @relation(fields: [amperePlanId], references: [id])
   amperes      Int
+  tier         SubscriptionTier   @default(NORMAL)
   price        Decimal            @db.Decimal(14, 2)
   startDate    DateTime
   endDate      DateTime?

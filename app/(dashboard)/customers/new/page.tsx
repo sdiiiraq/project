@@ -9,8 +9,12 @@ export default async function NewCustomerPage() {
   const { workspace, role } = await requireWorkspace();
   requirePermission(role, "customers.create");
 
-  const ws = await db.workspace.findUnique({ where: { id: workspace.id }, select: { amperePriceIQD: true } });
-  const pricePerAmpere = Number(ws?.amperePriceIQD ?? 0);
+  const ws = await db.workspace.findUnique({
+    where: { id: workspace.id },
+    select: { normalAmperePriceIQD: true, goldAmperePriceIQD: true },
+  });
+  const normalPrice = Number(ws?.normalAmperePriceIQD ?? 0);
+  const goldPrice = Number(ws?.goldAmperePriceIQD ?? 0);
 
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-6">
@@ -19,14 +23,14 @@ export default async function NewCustomerPage() {
         <p className="text-sm text-muted-foreground">سيتم إنشاء اشتراك فعّال وفاتورة الشهر الحالي تلقائيًا.</p>
       </div>
 
-      {pricePerAmpere <= 0 && (
+      {(normalPrice <= 0 || goldPrice <= 0) && (
         <Alert variant="warning">
           <AlertDescription>
-            لم يتم تحديد سعر الأمبير الواحد بعد. اذهب إلى{" "}
+            لم يتم تحديد {normalPrice <= 0 && goldPrice <= 0 ? "سعري الأمبير" : normalPrice <= 0 ? "سعر الأمبير العادي" : "سعر الأمبير الذهبي"} بعد. اذهب إلى{" "}
             <a href="/settings" className="font-medium text-primary hover:underline">
               الإعدادات
             </a>{" "}
-            وحدده أولًا قبل إضافة مشترك.
+            وحدده أولًا قبل إضافة مشترك بذلك النوع.
           </AlertDescription>
         </Alert>
       )}
@@ -36,7 +40,7 @@ export default async function NewCustomerPage() {
           <CardTitle>بيانات المشترك</CardTitle>
         </CardHeader>
         <CardContent>
-          <CustomerCreateForm pricePerAmpere={pricePerAmpere} />
+          <CustomerCreateForm normalPrice={normalPrice} goldPrice={goldPrice} />
         </CardContent>
       </Card>
     </div>
