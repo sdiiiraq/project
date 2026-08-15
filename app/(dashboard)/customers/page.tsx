@@ -2,32 +2,65 @@ import Link from "next/link";
 import { requireWorkspace } from "@/lib/auth/session";
 import { requirePermission, roleHasPermission } from "@/lib/rbac/access";
 import { db } from "@/lib/db";
+import { monthRange } from "@/lib/domain/billing";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { CustomerStatusBadge } from "@/components/customers/status-badge";
+import { PaymentStatusTabs } from "@/components/customers/payment-status-tabs";
 import { SearchInput } from "@/components/shared/search-input";
+import { SortSelect } from "@/components/shared/sort-select";
 import { Pagination } from "@/components/shared/pagination";
 import { formatMoney } from "@/lib/utils/money";
 import { Plus, Users, ChevronLeft } from "lucide-react";
-import type { Prisma } from "@prisma/client";
+import type { Prisma, InvoiceStatus } from "@prisma/client";
 
 const PAGE_SIZE = 20;
+
+type PaymentBucket = "paid" | "partial" | "unpaid";
+
+function bucketFor(status: InvoiceStatus | undefined): PaymentBucket {
+  if (status === "PAID") return "paid";
+  if (status === "PARTIALLY_PAID") return "partial";
+  return "unpaid"; // UNPAID, OVERDUE، أو لا توجد فاتورة لهذا الشهر بعد
+}
 
 export default async function CustomersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; sort?: string; status?: string }>;
 }) {
-  const { q, page: pageParam } = await searchParams;
+  const { q, page: pageParam, sort, status } = await searchParams;
   const { workspace, role } = await requireWorkspace();
   requirePermission(role, "customers.read");
 
   const page = Math.max(1, Number(pageParam) || 1);
 
+  // حالة الدفع تُحسب من فاتورة الشهر الحالي لكل مشترك — تحديد تلقائي، ليس State محلي.
+  const now = new Date();
+  const { periodStart: monthStart, periodEnd: monthEnd } = monthRange(now.getUTCFullYear(), now.getUTCMonth() + 1);
+
+  const [allCustomerIds, monthInvoices] = await Promise.all([
+    db.customer.findMany({ where: { workspaceId: workspace.id, deletedAt: null }, select: { id: true } }),
+    db.invoice.findMany({
+      where: { workspaceId: workspace.id, periodStart: { gte: monthStart, lte: monthEnd } },
+      select: { customerId: true, status: true },
+    }),
+  ]);
+
+  const statusMap = new Map(monthInvoices.map((i) => [i.customerId, i.status]));
+  const counts: Record<"all" | PaymentBucket, number> = { all: allCustomerIds.length, paid: 0, partial: 0, unpaid: 0 };
+  for (const c of allCustomerIds) counts[bucketFor(statusMap.get(c.id))]++;
+
+  const statusFilteredIds =
+    status === "paid" || status === "partial" || status === "unpaid"
+      ? allCustomerIds.filter((c) => bucketFor(statusMap.get(c.id)) === status).map((c) => c.id)
+      : undefined;
+
   const where: Prisma.CustomerWhereInput = {
     workspaceId: workspace.id,
     deletedAt: null,
+    ...(statusFilteredIds ? { id: { in: statusFilteredIds } } : {}),
     ...(q
       ? {
           OR: [
@@ -40,15 +73,27 @@ export default async function CustomersPage({
       : {}),
   };
 
-  const [customers, total] = await Promise.all([
-    db.customer.findMany({
-      where,
-      include: { subscriptions: { where: { status: "ACTIVE" }, take: 1 } },
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
-    }),
-    db.customer.count({ where }),
+  const sortByAmperes = sort === "amperes";
+
+  const [total, customers] = await Promise.all([
+    sortByAmperes ? db.customerSubscription.count({ where: { status: "ACTIVE", customer: where } }) : db.customer.count({ where }),
+    sortByAmperes
+      ? db.customerSubscription
+          .findMany({
+            where: { status: "ACTIVE", customer: where },
+            orderBy: { amperes: "asc" },
+            skip: (page - 1) * PAGE_SIZE,
+            take: PAGE_SIZE,
+            include: { customer: true },
+          })
+          .then((subs) => subs.map((s) => ({ ...s.customer, subscriptions: [{ amperes: s.amperes }] })))
+      : db.customer.findMany({
+          where,
+          include: { subscriptions: { where: { status: "ACTIVE" }, take: 1 } },
+          orderBy: sort === "name" ? { name: "asc" } : { createdAt: "desc" },
+          skip: (page - 1) * PAGE_SIZE,
+          take: PAGE_SIZE,
+        }),
   ]);
 
   const customerIds = customers.map((c) => c.id);
@@ -62,6 +107,7 @@ export default async function CustomersPage({
   );
 
   const canCreate = roleHasPermission(role, "customers.create");
+  const extraParams = { q, sort, status };
 
   return (
     <div className="flex flex-col gap-5">
@@ -79,13 +125,26 @@ export default async function CustomersPage({
         )}
       </div>
 
-      <SearchInput placeholder="ابحث بالاسم أو الهاتف أو رقم المشترك..." />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex-1">
+          <SearchInput placeholder="ابحث بالاسم أو الهاتف أو رقم المشترك..." />
+        </div>
+        <SortSelect
+          options={[
+            { value: "recent", label: "الأحدث أولًا" },
+            { value: "name", label: "الاسم أبجديًا" },
+            { value: "amperes", label: "الأمبير: الأقل أولًا" },
+          ]}
+        />
+      </div>
+
+      <PaymentStatusTabs active={status} counts={counts} basePath="/customers" searchParams={extraParams} />
 
       {customers.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
             <Users className="h-10 w-10 text-muted-foreground" />
-            <p className="font-medium">{q ? "لا توجد نتائج مطابقة" : "لا يوجد مشتركون بعد"}</p>
+            <p className="font-medium">{q || status ? "لا توجد نتائج مطابقة" : "لا يوجد مشتركون بعد"}</p>
           </CardContent>
         </Card>
       ) : (
@@ -149,7 +208,7 @@ export default async function CustomersPage({
             ))}
           </div>
 
-          <Pagination page={page} pageSize={PAGE_SIZE} total={total} basePath="/customers" searchParams={{ q }} />
+          <Pagination page={page} pageSize={PAGE_SIZE} total={total} basePath="/customers" searchParams={extraParams} />
         </>
       )}
     </div>
