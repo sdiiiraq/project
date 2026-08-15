@@ -14,10 +14,6 @@ const ibmPlexArabic = IBM_Plex_Sans_Arabic({
 export const metadata: Metadata = {
   title: "أمبير — AMPERE",
   description: "منصة إدارة المولدات الأهلية في العراق. الاشتراكات، الجباية، الوقود، والتقارير في مكان واحد.",
-  icons: {
-    icon: "/favicon.svg",
-    apple: "/apple-icon",
-  },
   manifest: "/manifest.webmanifest",
 };
 
