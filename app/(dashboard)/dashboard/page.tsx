@@ -11,7 +11,7 @@ import { OperatingSessionControl } from "@/components/maintenance/operating-sess
 import { formatMoney } from "@/lib/utils/money";
 import { formatTime } from "@/lib/utils/date";
 import { cn } from "@/lib/utils";
-import { Users, Zap, Wallet, TrendingUp, TrendingDown, AlertTriangle, Users2 } from "lucide-react";
+import { Users, Zap, Wallet, TrendingUp, TrendingDown, AlertTriangle, Users2, ChevronLeft } from "lucide-react";
 
 export default async function DashboardPage() {
   const { workspace, role, permissions } = await requireWorkspace();
@@ -100,6 +100,15 @@ export default async function DashboardPage() {
           </div>
           {canManageGenerator && <OperatingSessionControl openSessionId={openSession?.id ?? null} />}
         </CardContent>
+        {canManageGenerator && (
+          <Link
+            href="/operating-sessions"
+            className="flex items-center justify-between border-t border-border px-4 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+          >
+            جلسات التشغيل
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </Link>
+        )}
       </Card>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

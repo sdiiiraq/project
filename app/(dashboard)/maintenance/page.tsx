@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireWorkspace } from "@/lib/auth/session";
 import { requirePermission, roleHasPermission } from "@/lib/rbac/access";
 import { db } from "@/lib/db";
@@ -5,16 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateEquipmentDialog } from "@/components/maintenance/create-equipment-dialog";
 import { CreateMaintenanceDialog } from "@/components/maintenance/create-maintenance-dialog";
 import { formatMoney } from "@/lib/utils/money";
-import { formatDate, formatDateTime } from "@/lib/utils/date";
-import { Wrench } from "lucide-react";
+import { formatDate } from "@/lib/utils/date";
+import { Wrench, ChevronLeft, Zap } from "lucide-react";
 
 export default async function MaintenancePage() {
   const { workspace, role, permissions } = await requireWorkspace();
   requirePermission(permissions, "maintenance.read");
 
-  const generator = await db.generator.findFirst({ where: { workspaceId: workspace.id } });
-
-  const [equipment, records, recentSessions] = await Promise.all([
+  const [equipment, records] = await Promise.all([
     db.equipment.findMany({ where: { workspaceId: workspace.id }, orderBy: { createdAt: "desc" } }),
     db.maintenanceRecord.findMany({
       where: { workspaceId: workspace.id },
@@ -22,13 +21,6 @@ export default async function MaintenancePage() {
       orderBy: { date: "desc" },
       take: 20,
     }),
-    generator
-      ? db.operatingSession.findMany({
-          where: { workspaceId: workspace.id, generatorId: generator.id, endTime: { not: null } },
-          orderBy: { startTime: "desc" },
-          take: 10,
-        })
-      : [],
   ]);
 
   const canCreate = roleHasPermission(permissions, "maintenance.create");
@@ -86,25 +78,17 @@ export default async function MaintenancePage() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">جلسات التشغيل الأخيرة</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-2">
-          {recentSessions.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">لا توجد جلسات تشغيل مسجّلة بعد</p>
-          ) : (
-            recentSessions.map((session) => (
-              <div key={session.id} className="flex items-center justify-between rounded-lg border p-3 text-sm">
-                <span>{formatDateTime(session.startTime)}</span>
-                <span className="text-muted-foreground">
-                  {session.operatingHours ? `${Number(session.operatingHours).toFixed(1)} ساعة` : "—"}
-                </span>
-              </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
+      <Link href="/operating-sessions">
+        <Card>
+          <CardContent className="flex items-center justify-between gap-3 p-4">
+            <div className="flex items-center gap-3">
+              <Zap className="h-5 w-5 text-muted-foreground" />
+              <p className="text-sm font-medium">جلسات التشغيل</p>
+            </div>
+            <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+          </CardContent>
+        </Card>
+      </Link>
     </div>
   );
 }
