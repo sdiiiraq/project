@@ -20,12 +20,12 @@ export default function AppleIcon() {
           <path
             d="M20 46 L32 17 L44 46"
             fill="none"
-            stroke="#f59e0b"
+            stroke="#facc15"
             strokeWidth="6"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
-          <line x1="24.5" y1="35" x2="39.5" y2="35" stroke="#f59e0b" strokeWidth="5" strokeLinecap="round" />
+          <line x1="24.5" y1="35" x2="39.5" y2="35" stroke="#facc15" strokeWidth="5" strokeLinecap="round" />
         </svg>
       </div>
     ),

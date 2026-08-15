@@ -13,7 +13,7 @@ export function MobileNav({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  const primary = [...items].filter((i) => i.mobilePriority).sort((a, b) => (a.mobilePriority ?? 99) - (b.mobilePriority ?? 99)).slice(0, 3);
+  const primary = [...items].filter((i) => i.mobilePriority).sort((a, b) => (a.mobilePriority ?? 99) - (b.mobilePriority ?? 99));
   const rest = items.filter((i) => !primary.includes(i));
 
   return (

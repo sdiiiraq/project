@@ -16,6 +16,7 @@ export const metadata: Metadata = {
   description: "منصة إدارة المولدات الأهلية في العراق. الاشتراكات، الجباية، الوقود، والتقارير في مكان واحد.",
   icons: {
     icon: "/favicon.svg",
+    apple: "/apple-icon",
   },
   manifest: "/manifest.webmanifest",
 };

@@ -30,6 +30,7 @@ export async function startOperatingSession(): Promise<ActionResult> {
   });
 
   revalidatePath("/maintenance");
+  revalidatePath("/dashboard");
   return { success: true };
 }
 
@@ -63,5 +64,6 @@ export async function endOperatingSession(input: unknown): Promise<ActionResult>
   });
 
   revalidatePath("/maintenance");
+  revalidatePath("/dashboard");
   return { success: true };
 }

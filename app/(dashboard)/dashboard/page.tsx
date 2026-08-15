@@ -1,19 +1,34 @@
 import Link from "next/link";
 import { requireWorkspace } from "@/lib/auth/session";
+import { roleHasPermission } from "@/lib/rbac/access";
 import { db } from "@/lib/db";
 import { getDashboardStats } from "@/lib/domain/dashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RevenueTrendChart } from "@/components/dashboard/trend-chart";
 import { CustomerGrowthChart } from "@/components/dashboard/customer-growth-chart";
+import { OperatingSessionControl } from "@/components/maintenance/operating-session-control";
 import { formatMoney } from "@/lib/utils/money";
+import { cn } from "@/lib/utils";
 import { Users, Zap, Wallet, TrendingUp, TrendingDown, AlertTriangle, Users2 } from "lucide-react";
 
+function formatTime(date: Date) {
+  return new Intl.DateTimeFormat("ar-IQ", { hour: "numeric", minute: "2-digit" }).format(date);
+}
+
 export default async function DashboardPage() {
-  const { workspace } = await requireWorkspace();
+  const { workspace, role } = await requireWorkspace();
   const [generator, stats] = await Promise.all([
     db.generator.findFirst({ where: { workspaceId: workspace.id } }),
     getDashboardStats(workspace.id),
   ]);
+
+  const openSession = generator
+    ? await db.operatingSession.findFirst({
+        where: { workspaceId: workspace.id, generatorId: generator.id, endTime: null },
+      })
+    : null;
+
+  const canManageGenerator = roleHasPermission(role, "generator.manage");
 
   const kpis = [
     { label: "مجموع المشتركين", value: stats.customerCount, icon: Users },
@@ -49,6 +64,26 @@ export default async function DashboardPage() {
         <h1 className="text-xl font-bold">الرئيسية</h1>
         <p className="text-sm text-muted-foreground">{generator?.name ?? workspace.name}</p>
       </div>
+
+      <Card className={openSession ? "border-success/30 bg-success/5" : undefined}>
+        <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+          <div className="flex items-center gap-3">
+            <span
+              className={cn(
+                "h-2.5 w-2.5 shrink-0 rounded-full",
+                openSession ? "animate-pulse bg-success" : "bg-muted-foreground",
+              )}
+            />
+            <div>
+              <p className="text-sm font-semibold">{openSession ? "المولدة تعمل الآن" : "المولدة متوقفة"}</p>
+              {openSession && (
+                <p className="text-xs text-muted-foreground">تشغّل منذ الساعة {formatTime(openSession.startTime)}</p>
+              )}
+            </div>
+          </div>
+          {canManageGenerator && <OperatingSessionControl openSessionId={openSession?.id ?? null} />}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map((kpi) => (
