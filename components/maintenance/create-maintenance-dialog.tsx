@@ -13,9 +13,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 
+const MAINTENANCE_TYPES = ["تغيير الزيت", "تغيير الفلاتر", "البطارية", "الدينمو", "صيانة المولد", "أخرى"];
+
 export function CreateMaintenanceDialog({ equipment }: { equipment: { id: string; name: string }[] }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [customType, setCustomType] = useState(false);
   const {
     register,
     control,
@@ -72,8 +75,34 @@ export function CreateMaintenanceDialog({ equipment }: { equipment: { id: string
             {errors.equipmentId && <p className="text-xs text-destructive">{errors.equipmentId.message}</p>}
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="type">نوع الصيانة</Label>
-            <Input id="type" {...register("type")} />
+            <Label>نوع الصيانة</Label>
+            <Controller
+              control={control}
+              name="type"
+              render={({ field }) => (
+                <Select
+                  onValueChange={(value) => {
+                    setCustomType(value === "أخرى");
+                    field.onChange(value === "أخرى" ? "" : value);
+                  }}
+                  value={customType ? "أخرى" : field.value}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر نوع الصيانة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MAINTENANCE_TYPES.map((t) => (
+                      <SelectItem key={t} value={t}>
+                        {t}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {customType && (
+              <Input placeholder="اكتب نوع الصيانة" {...register("type")} className="mt-1.5" />
+            )}
             {errors.type && <p className="text-xs text-destructive">{errors.type.message}</p>}
           </div>
           <div className="grid grid-cols-2 gap-3">

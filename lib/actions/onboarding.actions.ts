@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireWorkspace } from "@/lib/auth/session";
+import { requirePermission, ForbiddenError } from "@/lib/rbac/access";
 import {
   pricePerAmpereSchema,
   generatorInfoSchema,
@@ -15,7 +16,13 @@ export async function updateGeneratorName(input: unknown): Promise<ActionResult>
   const parsed = generatorNameSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
 
-  const { workspace } = await requireWorkspace();
+  const { workspace, permissions } = await requireWorkspace();
+  try {
+    requirePermission(permissions, "settings.manage");
+  } catch (e) {
+    if (e instanceof ForbiddenError) return { error: e.message };
+    throw e;
+  }
 
   await db.$transaction([
     db.workspace.update({ where: { id: workspace.id }, data: { name: parsed.data.name } }),
@@ -30,7 +37,13 @@ export async function updateGeneratorInfo(input: unknown): Promise<ActionResult>
   const parsed = generatorInfoSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
 
-  const { workspace } = await requireWorkspace();
+  const { workspace, permissions } = await requireWorkspace();
+  try {
+    requirePermission(permissions, "settings.manage");
+  } catch (e) {
+    if (e instanceof ForbiddenError) return { error: e.message };
+    throw e;
+  }
   const { ownerName, phone, region, address } = parsed.data;
 
   await db.$transaction([
@@ -49,15 +62,39 @@ export async function savePricePerAmpere(input: unknown): Promise<ActionResult> 
   const parsed = pricePerAmpereSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
 
-  const { workspace } = await requireWorkspace();
+  const { workspace, user, permissions } = await requireWorkspace();
+  try {
+    requirePermission(permissions, "settings.manage");
+  } catch (e) {
+    if (e instanceof ForbiddenError) return { error: e.message };
+    throw e;
+  }
 
-  await db.workspace.update({
+  const before = await db.workspace.findUnique({
     where: { id: workspace.id },
-    data: {
-      normalAmperePriceIQD: parsed.data.normalAmperePriceIQD,
-      goldAmperePriceIQD: parsed.data.goldAmperePriceIQD,
-    },
+    select: { normalAmperePriceIQD: true, goldAmperePriceIQD: true },
   });
+
+  await db.$transaction([
+    db.workspace.update({
+      where: { id: workspace.id },
+      data: {
+        normalAmperePriceIQD: parsed.data.normalAmperePriceIQD,
+        goldAmperePriceIQD: parsed.data.goldAmperePriceIQD,
+      },
+    }),
+    db.auditLog.create({
+      data: {
+        workspaceId: workspace.id,
+        actorUserId: user.id,
+        action: "workspace.ampere_price_change",
+        entity: "Workspace",
+        entityId: workspace.id,
+        before: { normalAmperePriceIQD: before?.normalAmperePriceIQD?.toString(), goldAmperePriceIQD: before?.goldAmperePriceIQD?.toString() },
+        after: { normalAmperePriceIQD: parsed.data.normalAmperePriceIQD, goldAmperePriceIQD: parsed.data.goldAmperePriceIQD },
+      },
+    }),
+  ]);
 
   revalidatePath("/onboarding");
   revalidatePath("/settings");
