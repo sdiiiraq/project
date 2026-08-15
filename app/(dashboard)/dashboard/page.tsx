@@ -105,18 +105,18 @@ export default async function DashboardPage() {
         </CardContent>
       </Card>
 
-      <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {kpis.map((kpi) => (
           <Card key={kpi.label}>
-            <CardContent className="flex flex-row-reverse items-center gap-4 p-4">
-              <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-xl", TONES[kpi.tone])}>
-                <kpi.icon className="h-5 w-5" />
-              </div>
-              <div className="min-w-0 flex-1">
+            <CardContent className="flex flex-col gap-3 p-4">
+              <div className="flex items-center justify-between">
                 <p className="text-xs font-medium text-muted-foreground">{kpi.label}</p>
-                <p className="text-xl font-bold tracking-tight sm:text-2xl">{kpi.value}</p>
-                {"hint" in kpi && kpi.hint && <p className="mt-0.5 text-xs text-muted-foreground">{kpi.hint}</p>}
+                <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl", TONES[kpi.tone])}>
+                  <kpi.icon className="h-[18px] w-[18px]" />
+                </div>
               </div>
+              <p className="text-xl font-bold tracking-tight sm:text-2xl">{kpi.value}</p>
+              {"hint" in kpi && kpi.hint && <p className="text-xs text-muted-foreground">{kpi.hint}</p>}
             </CardContent>
           </Card>
         ))}
