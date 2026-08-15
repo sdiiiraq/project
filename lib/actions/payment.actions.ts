@@ -24,6 +24,15 @@ export async function recordPayment(input: unknown): Promise<ActionResult> {
   const customer = await db.customer.findFirst({ where: { id: parsed.data.customerId, workspaceId: workspace.id } });
   if (!customer) return { error: "المشترك غير موجود." };
 
+  const outstandingAgg = await db.invoice.aggregate({
+    where: { customerId: parsed.data.customerId, status: { not: "PAID" } },
+    _sum: { amount: true, paidAmount: true },
+  });
+  const outstanding = Number(outstandingAgg._sum.amount ?? 0) - Number(outstandingAgg._sum.paidAmount ?? 0);
+  if (parsed.data.amount > outstanding) {
+    return { error: `المبلغ أكبر من المستحق الكلي (${outstanding.toLocaleString("ar-IQ")} د.ع). لا يمكن تسجيل دفعة أكبر من المطلوب.` };
+  }
+
   await applyPayment({
     workspaceId: workspace.id,
     customerId: parsed.data.customerId,

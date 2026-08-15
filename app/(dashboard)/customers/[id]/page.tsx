@@ -80,7 +80,17 @@ export default async function CustomerProfilePage({ params }: { params: Promise<
               goldPrice={goldPrice}
             />
           )}
-          {canRecordPayment && <RecordPaymentDialog customerId={customer.id} outstanding={outstanding} />}
+          {canRecordPayment && (
+            <RecordPaymentDialog
+              customerId={customer.id}
+              customerName={customer.name}
+              outstanding={outstanding}
+              subscriptionAmperes={activeSubscription?.amperes ?? 0}
+              subscriptionPrice={
+                activeSubscription ? Math.round(Number(activeSubscription.price) / activeSubscription.amperes) : 0
+              }
+            />
+          )}
           {canUpdateCustomer && (
             <EditCustomerDialog
               customer={{
