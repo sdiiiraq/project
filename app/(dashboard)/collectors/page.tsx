@@ -9,7 +9,7 @@ import { formatMoney } from "@/lib/utils/money";
 import { UserCog } from "lucide-react";
 
 export default async function CollectorsPage() {
-  const { workspace, role, permissions } = await requireWorkspace();
+  const { workspace, permissions } = await requireWorkspace();
   requirePermission(permissions, "collectors.manage");
 
   const [members, customers] = await Promise.all([

@@ -19,7 +19,7 @@ export async function createFuelPurchase(input: unknown): Promise<ActionResult> 
   const parsed = createFuelPurchaseSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
 
-  const { workspace, role, permissions, user } = await requireWorkspace();
+  const { workspace, permissions, user } = await requireWorkspace();
   try {
     requirePermission(permissions, "fuel.create");
   } catch (e) {
@@ -63,7 +63,7 @@ export async function updateFuelPurchase(input: unknown): Promise<ActionResult> 
   const parsed = updateFuelPurchaseSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
 
-  const { workspace, role, permissions, user } = await requireWorkspace();
+  const { workspace, permissions, user } = await requireWorkspace();
   try {
     requirePermission(permissions, "fuel.update");
   } catch (e) {
@@ -115,7 +115,7 @@ export async function deleteFuelPurchase(input: unknown): Promise<ActionResult> 
   const parsed = deleteFuelPurchaseSchema.safeParse(input);
   if (!parsed.success) return { error: "بيانات غير صحيحة" };
 
-  const { workspace, role, permissions, user } = await requireWorkspace();
+  const { workspace, permissions, user } = await requireWorkspace();
   try {
     requirePermission(permissions, "fuel.delete");
   } catch (e) {
@@ -150,7 +150,7 @@ export async function createFuelUsage(input: unknown): Promise<ActionResult> {
   const parsed = createFuelUsageSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
 
-  const { workspace, role, permissions } = await requireWorkspace();
+  const { workspace, permissions } = await requireWorkspace();
   try {
     requirePermission(permissions, "fuel.create");
   } catch (e) {
@@ -175,7 +175,7 @@ export async function updateFuelUsage(input: unknown): Promise<ActionResult> {
   const parsed = updateFuelUsageSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
 
-  const { workspace, role, permissions, user } = await requireWorkspace();
+  const { workspace, permissions, user } = await requireWorkspace();
   try {
     requirePermission(permissions, "fuel.update");
   } catch (e) {
@@ -212,7 +212,7 @@ export async function deleteFuelUsage(input: unknown): Promise<ActionResult> {
   const parsed = deleteFuelUsageSchema.safeParse(input);
   if (!parsed.success) return { error: "بيانات غير صحيحة" };
 
-  const { workspace, role, permissions, user } = await requireWorkspace();
+  const { workspace, permissions, user } = await requireWorkspace();
   try {
     requirePermission(permissions, "fuel.delete");
   } catch (e) {

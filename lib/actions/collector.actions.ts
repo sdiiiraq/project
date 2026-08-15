@@ -13,7 +13,7 @@ export async function assignCollector(input: unknown): Promise<ActionResult> {
   const parsed = assignCollectorSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
 
-  const { workspace, role, permissions } = await requireWorkspace();
+  const { workspace, permissions } = await requireWorkspace();
   try {
     requirePermission(permissions, "collectors.manage");
   } catch (e) {
@@ -37,7 +37,7 @@ export async function assignCollector(input: unknown): Promise<ActionResult> {
 }
 
 export async function unassignCollector(assignmentId: string): Promise<ActionResult> {
-  const { workspace, role, permissions } = await requireWorkspace();
+  const { workspace, permissions } = await requireWorkspace();
   try {
     requirePermission(permissions, "collectors.manage");
   } catch (e) {
@@ -58,7 +58,7 @@ export async function settleCollector(input: unknown): Promise<ActionResult> {
   const parsed = settleCollectorSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
 
-  const { workspace, role, permissions, user } = await requireWorkspace();
+  const { workspace, permissions, user } = await requireWorkspace();
   try {
     requirePermission(permissions, "collectors.manage");
   } catch (e) {

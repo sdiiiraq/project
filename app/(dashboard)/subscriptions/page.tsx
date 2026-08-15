@@ -18,7 +18,7 @@ const STATUS_LABELS: Record<SubscriptionStatus, string> = {
 };
 
 export default async function SubscriptionsPage() {
-  const { workspace, role, permissions } = await requireWorkspace();
+  const { workspace, permissions } = await requireWorkspace();
   requirePermission(permissions, "subscriptions.read");
 
   const subscriptions = await db.customerSubscription.findMany({

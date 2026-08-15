@@ -10,7 +10,7 @@ import { formatDate } from "@/lib/utils/date";
 import { Wrench, ChevronLeft, Zap } from "lucide-react";
 
 export default async function MaintenancePage() {
-  const { workspace, role, permissions } = await requireWorkspace();
+  const { workspace, permissions } = await requireWorkspace();
   requirePermission(permissions, "maintenance.read");
 
   const [equipment, records] = await Promise.all([

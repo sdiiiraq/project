@@ -32,7 +32,7 @@ export default async function CustomersPage({
   searchParams: Promise<{ q?: string; page?: string; sort?: string; status?: string }>;
 }) {
   const { q, page: pageParam, sort, status } = await searchParams;
-  const { workspace, role, permissions } = await requireWorkspace();
+  const { workspace, permissions } = await requireWorkspace();
   requirePermission(permissions, "customers.read");
 
   const page = Math.max(1, Number(pageParam) || 1);

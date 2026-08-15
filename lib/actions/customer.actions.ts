@@ -19,7 +19,7 @@ export async function createCustomer(input: unknown): Promise<ActionResult> {
   const parsed = createCustomerSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
 
-  const { workspace, user, role, permissions } = await requireWorkspace();
+  const { workspace, user, permissions } = await requireWorkspace();
 
   try {
     requirePermission(permissions, "customers.create");
@@ -58,7 +58,7 @@ export async function updateCustomer(input: unknown): Promise<ActionResult> {
   const parsed = updateCustomerSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
 
-  const { workspace, role, permissions } = await requireWorkspace();
+  const { workspace, permissions } = await requireWorkspace();
   try {
     requirePermission(permissions, "customers.update");
   } catch (e) {
@@ -81,7 +81,7 @@ export async function changeCustomerStatus(input: unknown): Promise<ActionResult
   const parsed = changeCustomerStatusSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
 
-  const { workspace, role, permissions, user } = await requireWorkspace();
+  const { workspace, permissions, user } = await requireWorkspace();
   try {
     requirePermission(permissions, "customers.update");
   } catch (e) {
@@ -113,7 +113,7 @@ export async function changeCustomerStatus(input: unknown): Promise<ActionResult
 }
 
 export async function deleteCustomer(customerId: string): Promise<ActionResult> {
-  const { workspace, role, permissions, user } = await requireWorkspace();
+  const { workspace, permissions, user } = await requireWorkspace();
   try {
     requirePermission(permissions, "customers.delete");
   } catch (e) {
@@ -146,7 +146,7 @@ export async function changeAmpere(input: unknown): Promise<ActionResult> {
   const parsed = changeAmpereSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
 
-  const { workspace, role, permissions, user } = await requireWorkspace();
+  const { workspace, permissions, user } = await requireWorkspace();
   try {
     requirePermission(permissions, "subscriptions.manage");
   } catch (e) {

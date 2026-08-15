@@ -9,7 +9,7 @@ export type ActionResult = { error: string } | { success: true };
 
 // بعد إغلاق الشهر، أي تصحيح للعمليات القديمة يجب أن يمر عبر Adjustment وليس تعديلًا مباشرًا.
 export async function closeFinancialPeriod(year: number, month: number): Promise<ActionResult> {
-  const { workspace, role, permissions, user } = await requireWorkspace();
+  const { workspace, permissions, user } = await requireWorkspace();
   try {
     requirePermission(permissions, "billing.manage");
   } catch (e) {

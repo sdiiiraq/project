@@ -12,7 +12,7 @@ export async function createEquipment(input: unknown): Promise<ActionResult> {
   const parsed = createEquipmentSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
 
-  const { workspace, role, permissions } = await requireWorkspace();
+  const { workspace, permissions } = await requireWorkspace();
   try {
     requirePermission(permissions, "maintenance.create");
   } catch (e) {
@@ -35,7 +35,7 @@ export async function createMaintenanceRecord(input: unknown): Promise<ActionRes
   const parsed = createMaintenanceSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
 
-  const { workspace, role, permissions } = await requireWorkspace();
+  const { workspace, permissions } = await requireWorkspace();
   try {
     requirePermission(permissions, "maintenance.create");
   } catch (e) {

@@ -10,7 +10,7 @@ import { CountBarChart } from "@/components/analytics/count-bar-chart";
 import { Lock } from "lucide-react";
 
 export default async function AnalyticsPage() {
-  const { workspace, role, permissions } = await requireWorkspace();
+  const { workspace, permissions } = await requireWorkspace();
   requirePermission(permissions, "reports.read");
 
   const [{ expenseBreakdown, collectionRateTrend, fuelCostTrend }, hasAdvanced] = await Promise.all([

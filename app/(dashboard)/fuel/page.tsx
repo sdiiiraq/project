@@ -11,7 +11,7 @@ import { formatDate } from "@/lib/utils/date";
 import { Fuel } from "lucide-react";
 
 export default async function FuelPage() {
-  const { workspace, role, permissions } = await requireWorkspace();
+  const { workspace, permissions } = await requireWorkspace();
   requirePermission(permissions, "fuel.read");
 
   const [purchases, usages, purchaseAgg, usageAgg] = await Promise.all([

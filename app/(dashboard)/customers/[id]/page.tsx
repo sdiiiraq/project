@@ -28,7 +28,7 @@ const TIER_LABELS: Record<string, string> = {
 
 export default async function CustomerProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { workspace, role, permissions } = await requireWorkspace();
+  const { workspace, permissions } = await requireWorkspace();
   requirePermission(permissions, "customers.read");
 
   const customer = await db.customer.findFirst({

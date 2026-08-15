@@ -9,7 +9,7 @@ import { endOperatingSessionSchema } from "@/lib/validation/operations";
 export type ActionResult = { error: string } | { success: true };
 
 export async function startOperatingSession(): Promise<ActionResult> {
-  const { workspace, role, permissions } = await requireWorkspace();
+  const { workspace, permissions } = await requireWorkspace();
   try {
     requirePermission(permissions, "generator.manage");
   } catch (e) {
@@ -38,7 +38,7 @@ export async function endOperatingSession(input: unknown): Promise<ActionResult>
   const parsed = endOperatingSessionSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
 
-  const { workspace, role, permissions } = await requireWorkspace();
+  const { workspace, permissions } = await requireWorkspace();
   try {
     requirePermission(permissions, "generator.manage");
   } catch (e) {

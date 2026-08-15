@@ -8,7 +8,7 @@ import { formatDate } from "@/lib/utils/date";
 import { Receipt } from "lucide-react";
 
 export default async function ExpensesPage() {
-  const { workspace, role, permissions } = await requireWorkspace();
+  const { workspace, permissions } = await requireWorkspace();
   requirePermission(permissions, "expenses.read");
 
   const [expenses, categories] = await Promise.all([

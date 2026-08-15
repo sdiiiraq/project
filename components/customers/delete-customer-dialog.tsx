@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 import { deleteCustomer } from "@/lib/actions/customer.actions";
 import { Button } from "@/components/ui/button";

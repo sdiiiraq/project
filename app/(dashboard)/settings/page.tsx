@@ -16,7 +16,7 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export default async function SettingsPage() {
-  const { workspace, role, permissions } = await requireWorkspace();
+  const { workspace, permissions } = await requireWorkspace();
   requirePermission(permissions, "settings.manage");
 
   const [generator, ws, members] = await Promise.all([
