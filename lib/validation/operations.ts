@@ -68,6 +68,8 @@ export const createMaintenanceSchema = z.object({
   nextMaintenanceDate: z.coerce.date().optional(),
 });
 
+export const deleteMaintenanceRecordSchema = z.object({ id: z.string().uuid() });
+
 export const startOperatingSessionSchema = z.object({
   startTime: z.coerce.date().optional(),
 });
@@ -86,3 +88,4 @@ export type UpdateFuelPurchaseInput = z.infer<typeof updateFuelPurchaseSchema>;
 export type CreateFuelUsageInput = z.infer<typeof createFuelUsageSchema>;
 export type UpdateFuelUsageInput = z.infer<typeof updateFuelUsageSchema>;
 export type CreateMaintenanceInput = z.infer<typeof createMaintenanceSchema>;
+export type DeleteMaintenanceRecordInput = z.infer<typeof deleteMaintenanceRecordSchema>;

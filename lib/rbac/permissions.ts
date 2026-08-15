@@ -19,6 +19,7 @@ export const PERMISSIONS = {
   "fuel.delete": "حذف سجلات الوقود",
   "maintenance.read": "عرض الصيانة",
   "maintenance.create": "تسجيل صيانة",
+  "maintenance.delete": "حذف سجلات الصيانة",
   "generator.manage": "إدارة بيانات المولدة",
   "reports.read": "عرض التقارير",
   "reports.export": "تصدير التقارير",

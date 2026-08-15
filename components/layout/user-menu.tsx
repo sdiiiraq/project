@@ -60,13 +60,9 @@ export function UserMenu({
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <form action={signOut}>
-          <button type="submit" className="w-full">
-            <DropdownMenuItem asChild={false} className="text-destructive">
-              <LogOut className="h-4 w-4" /> تسجيل الخروج
-            </DropdownMenuItem>
-          </button>
-        </form>
+        <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => signOut()}>
+          <LogOut className="h-4 w-4" /> تسجيل الخروج
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

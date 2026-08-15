@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateEquipmentDialog } from "@/components/maintenance/create-equipment-dialog";
 import { CreateMaintenanceDialog } from "@/components/maintenance/create-maintenance-dialog";
+import { DeleteMaintenanceRecordButton } from "@/components/maintenance/delete-maintenance-record-button";
 import { formatMoney } from "@/lib/utils/money";
 import { formatDate } from "@/lib/utils/date";
 import { Wrench, ChevronLeft, Zap } from "lucide-react";
@@ -24,6 +25,7 @@ export default async function MaintenancePage() {
   ]);
 
   const canCreate = roleHasPermission(permissions, "maintenance.create");
+  const canDelete = roleHasPermission(permissions, "maintenance.delete");
 
   return (
     <div className="flex flex-col gap-6">
@@ -70,7 +72,17 @@ export default async function MaintenancePage() {
                     <p className="font-medium">{record.type} — {record.equipment.name}</p>
                     <p className="text-xs text-muted-foreground">{formatDate(record.date)}</p>
                   </div>
-                  <span className="font-semibold">{formatMoney(Number(record.cost))}</span>
+                  <div className="flex items-center gap-1">
+                    <span className="font-semibold">{formatMoney(Number(record.cost))}</span>
+                    {canDelete && (
+                      <DeleteMaintenanceRecordButton
+                        id={record.id}
+                        type={record.type}
+                        equipmentName={record.equipment.name}
+                        cost={Number(record.cost)}
+                      />
+                    )}
+                  </div>
                 </div>
               ))
             )}
