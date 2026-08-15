@@ -14,6 +14,8 @@ export const PERMISSIONS = {
   "expenses.create": "إضافة مصروف",
   "fuel.read": "عرض الوقود",
   "fuel.create": "تسجيل شراء/استهلاك وقود",
+  "fuel.update": "تعديل سجلات الوقود",
+  "fuel.delete": "حذف سجلات الوقود",
   "maintenance.read": "عرض الصيانة",
   "maintenance.create": "تسجيل صيانة",
   "generator.manage": "إدارة بيانات المولدة",

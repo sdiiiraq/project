@@ -33,11 +33,23 @@ export const createFuelPurchaseSchema = z.object({
   date: z.coerce.date(),
 });
 
+export const updateFuelPurchaseSchema = createFuelPurchaseSchema.extend({
+  id: z.string().uuid(),
+});
+
+export const deleteFuelPurchaseSchema = z.object({ id: z.string().uuid() });
+
 export const createFuelUsageSchema = z.object({
   quantityLiters: z.coerce.number().positive("الكمية يجب أن تكون أكبر من صفر"),
   date: z.coerce.date(),
   note: z.string().optional(),
 });
+
+export const updateFuelUsageSchema = createFuelUsageSchema.extend({
+  id: z.string().uuid(),
+});
+
+export const deleteFuelUsageSchema = z.object({ id: z.string().uuid() });
 
 export const createEquipmentSchema = z.object({
   name: z.string().min(2, "أدخل اسم المعدة"),
@@ -70,5 +82,7 @@ export type AssignCollectorInput = z.infer<typeof assignCollectorSchema>;
 export type SettleCollectorInput = z.infer<typeof settleCollectorSchema>;
 export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;
 export type CreateFuelPurchaseInput = z.infer<typeof createFuelPurchaseSchema>;
+export type UpdateFuelPurchaseInput = z.infer<typeof updateFuelPurchaseSchema>;
 export type CreateFuelUsageInput = z.infer<typeof createFuelUsageSchema>;
+export type UpdateFuelUsageInput = z.infer<typeof updateFuelUsageSchema>;
 export type CreateMaintenanceInput = z.infer<typeof createMaintenanceSchema>;

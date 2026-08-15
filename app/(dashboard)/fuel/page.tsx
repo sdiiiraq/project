@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateFuelPurchaseDialog } from "@/components/fuel/create-fuel-purchase-dialog";
 import { CreateFuelUsageDialog } from "@/components/fuel/create-fuel-usage-dialog";
+import { EditFuelPurchaseDialog } from "@/components/fuel/edit-fuel-purchase-dialog";
+import { EditFuelUsageDialog } from "@/components/fuel/edit-fuel-usage-dialog";
 import { formatMoney } from "@/lib/utils/money";
 import { formatDate } from "@/lib/utils/date";
 import { Fuel } from "lucide-react";
@@ -21,10 +23,36 @@ export default async function FuelPage() {
 
   const currentStock = Number(purchaseAgg._sum.quantityLiters ?? 0) - Number(usageAgg._sum.quantityLiters ?? 0);
   const canCreate = roleHasPermission(role, "fuel.create");
+  const canUpdate = roleHasPermission(role, "fuel.update");
+  const canDelete = roleHasPermission(role, "fuel.delete");
 
-  const events = [
-    ...purchases.map((p) => ({ id: p.id, date: p.date, type: "شراء" as const, quantity: Number(p.quantityLiters), cost: Number(p.totalCost) })),
-    ...usages.map((u) => ({ id: u.id, date: u.date, type: "استهلاك" as const, quantity: Number(u.quantityLiters), cost: null })),
+  type FuelEvent = {
+    id: string;
+    date: Date;
+    type: "شراء" | "استهلاك";
+    quantity: number;
+    cost: number | null;
+    purchase?: { id: string; quantityLiters: number; pricePerLiter: number; supplier: string | null; date: Date };
+    usage?: { id: string; quantityLiters: number; date: Date; note: string | null };
+  };
+
+  const events: FuelEvent[] = [
+    ...purchases.map((p): FuelEvent => ({
+      id: p.id,
+      date: p.date,
+      type: "شراء",
+      quantity: Number(p.quantityLiters),
+      cost: Number(p.totalCost),
+      purchase: { id: p.id, quantityLiters: Number(p.quantityLiters), pricePerLiter: Number(p.pricePerLiter), supplier: p.supplier, date: p.date },
+    })),
+    ...usages.map((u): FuelEvent => ({
+      id: u.id,
+      date: u.date,
+      type: "استهلاك",
+      quantity: Number(u.quantityLiters),
+      cost: null,
+      usage: { id: u.id, quantityLiters: Number(u.quantityLiters), date: u.date, note: u.note },
+    })),
   ].sort((a, b) => b.date.getTime() - a.date.getTime());
 
   return (
@@ -85,7 +113,11 @@ export default async function FuelPage() {
                   <p className="font-medium">{event.type} — {event.quantity.toLocaleString("ar-IQ")} لتر</p>
                   <p className="text-xs text-muted-foreground">{formatDate(event.date)}</p>
                 </div>
-                {event.cost !== null && <span className="font-semibold">{formatMoney(event.cost)}</span>}
+                <div className="flex items-center gap-2">
+                  {event.cost !== null && <span className="font-semibold">{formatMoney(event.cost)}</span>}
+                  {canUpdate && event.purchase && <EditFuelPurchaseDialog purchase={event.purchase} canDelete={canDelete} />}
+                  {canUpdate && event.usage && <EditFuelUsageDialog usage={event.usage} canDelete={canDelete} />}
+                </div>
               </CardContent>
             </Card>
           ))}

@@ -9,7 +9,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<MemberRole, PermissionKey[]> = {
     "payments.read", "payments.create", "payments.adjust",
     "collectors.manage",
     "expenses.read", "expenses.create",
-    "fuel.read", "fuel.create",
+    "fuel.read", "fuel.create", "fuel.update", "fuel.delete",
     "maintenance.read", "maintenance.create",
     "generator.manage",
     "reports.read", "reports.export",
@@ -21,7 +21,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<MemberRole, PermissionKey[]> = {
     "payments.read", "payments.create", "payments.adjust",
     "collectors.manage",
     "expenses.read", "expenses.create",
-    "fuel.read", "fuel.create",
+    "fuel.read", "fuel.create", "fuel.update", "fuel.delete",
     "maintenance.read", "maintenance.create",
     "generator.manage",
     "reports.read", "reports.export",
@@ -40,7 +40,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<MemberRole, PermissionKey[]> = {
   ],
   MAINTENANCE: [
     "maintenance.read", "maintenance.create",
-    "fuel.read", "fuel.create",
+    "fuel.read", "fuel.create", "fuel.update", "fuel.delete",
     "generator.manage",
   ],
   VIEWER: [
