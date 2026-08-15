@@ -1,11 +1,8 @@
 import { db } from "@/lib/db";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { formatDateTime } from "@/lib/utils/date";
 import { ScrollText } from "lucide-react";
-
-function formatDateTime(date: Date) {
-  return new Intl.DateTimeFormat("ar-IQ", { dateStyle: "medium", timeStyle: "short" }).format(date);
-}
 
 export default async function AdminAuditPage() {
   const logs = await db.auditLog.findMany({

@@ -3,10 +3,7 @@ import { db } from "@/lib/db";
 import { Card, CardContent } from "@/components/ui/card";
 import { TicketStatusBadge } from "@/components/support/ticket-status-badge";
 import { LifeBuoy, ChevronLeft } from "lucide-react";
-
-function formatDate(date: Date) {
-  return new Intl.DateTimeFormat("ar-IQ", { year: "numeric", month: "short", day: "numeric" }).format(date);
-}
+import { formatDate } from "@/lib/utils/date";
 
 export default async function AdminSupportPage() {
   const tickets = await db.supportTicket.findMany({

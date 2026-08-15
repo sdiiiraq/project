@@ -1,8 +1,7 @@
 import "server-only";
 import { db } from "@/lib/db";
 import { monthRange } from "./billing";
-
-const MONTH_LABELS = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+import { formatMonthLabel } from "@/lib/utils/date";
 
 function lastNMonths(n: number, from = new Date()) {
   const months: { year: number; month: number }[] = [];
@@ -39,7 +38,7 @@ export async function getAnalyticsData(workspaceId: string) {
     const due = monthInvoices.reduce((s, i) => s + Number(i.amount), 0);
     const collected = monthInvoices.reduce((s, i) => s + Number(i.paidAmount), 0);
     return {
-      month: MONTH_LABELS[month - 1] ?? String(month),
+      month: formatMonthLabel(month),
       "نسبة التحصيل": due > 0 ? Math.round((collected / due) * 100) : 0,
     };
   });
@@ -48,7 +47,7 @@ export async function getAnalyticsData(workspaceId: string) {
     const { periodStart, periodEnd } = monthRange(year, month);
     const monthPurchases = fuelPurchases.filter((p) => p.date >= periodStart && p.date <= periodEnd);
     return {
-      month: MONTH_LABELS[month - 1] ?? String(month),
+      month: formatMonthLabel(month),
       "كلفة الوقود": monthPurchases.reduce((s, p) => s + Number(p.totalCost), 0),
     };
   });
@@ -78,7 +77,7 @@ export async function getAdvancedAnalyticsData(workspaceId: string) {
     const collected = monthInvoices.reduce((s, i) => s + Number(i.paidAmount), 0);
     const expensesTotal = monthExpenses.reduce((s, e) => s + Number(e.amount), 0);
     const margin = collected > 0 ? Math.round(((collected - expensesTotal) / collected) * 100) : 0;
-    return { month: MONTH_LABELS[month - 1] ?? String(month), "هامش الربح": margin };
+    return { month: formatMonthLabel(month), "هامش الربح": margin };
   });
 
   const retentionTrend = months.map(({ year, month }) => {
@@ -88,7 +87,7 @@ export async function getAdvancedAnalyticsData(workspaceId: string) {
       const after = log.after as { status?: string } | null;
       return after?.status === "DISCONNECTED";
     }).length;
-    return { month: MONTH_LABELS[month - 1] ?? String(month), "مشتركون مقطوعون": disconnected };
+    return { month: formatMonthLabel(month), "مشتركون مقطوعون": disconnected };
   });
 
   return { profitMarginTrend, retentionTrend };

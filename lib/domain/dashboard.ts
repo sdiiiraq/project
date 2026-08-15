@@ -1,8 +1,7 @@
 import "server-only";
 import { db } from "@/lib/db";
 import { monthRange } from "./billing";
-
-const MONTH_LABELS = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+import { formatMonthLabel } from "@/lib/utils/date";
 
 function lastNMonths(n: number, from = new Date()) {
   const months: { year: number; month: number }[] = [];
@@ -67,7 +66,7 @@ export async function getDashboardStats(workspaceId: string) {
         db.invoice.findMany({ where: { workspaceId, periodStart: { gte: periodStart, lte: periodEnd } } }),
         db.customer.count({ where: { workspaceId, deletedAt: null, createdAt: { lte: periodEnd } } }),
       ]);
-      const label = MONTH_LABELS[month - 1] ?? String(month);
+      const label = formatMonthLabel(month);
       return {
         label,
         due: invoices.reduce((sum, i) => sum + Number(i.amount), 0),

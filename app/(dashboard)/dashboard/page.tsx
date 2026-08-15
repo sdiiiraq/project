@@ -9,12 +9,9 @@ import { RevenueTrendChart } from "@/components/dashboard/trend-chart";
 import { CustomerGrowthChart } from "@/components/dashboard/customer-growth-chart";
 import { OperatingSessionControl } from "@/components/maintenance/operating-session-control";
 import { formatMoney } from "@/lib/utils/money";
+import { formatTime } from "@/lib/utils/date";
 import { cn } from "@/lib/utils";
 import { Users, Zap, Wallet, TrendingUp, TrendingDown, AlertTriangle, Users2 } from "lucide-react";
-
-function formatTime(date: Date) {
-  return new Intl.DateTimeFormat("ar-IQ", { hour: "numeric", minute: "2-digit" }).format(date);
-}
 
 export default async function DashboardPage() {
   const { workspace, role } = await requireWorkspace();

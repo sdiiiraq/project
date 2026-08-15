@@ -1,7 +1,6 @@
 import "server-only";
 import { db } from "@/lib/db";
-
-const MONTH_LABELS = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+import { formatMonthLabel } from "@/lib/utils/date";
 
 function lastNMonths(n: number, from = new Date()) {
   const months: { year: number; month: number; start: Date; end: Date }[] = [];
@@ -40,7 +39,7 @@ export async function getAdminDashboardStats() {
   const months = lastNMonths(6);
   const workspaceGrowth = await Promise.all(
     months.map(async ({ month, end }) => ({
-      month: MONTH_LABELS[month - 1] ?? String(month),
+      month: formatMonthLabel(month),
       "عدد المولدات": await db.workspace.count({ where: { createdAt: { lte: end } } }),
     })),
   );

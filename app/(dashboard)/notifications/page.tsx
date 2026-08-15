@@ -5,10 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Bell, CheckCheck } from "lucide-react";
 import { markAllNotificationsRead } from "@/lib/actions/notification.actions";
 import { NotificationRow } from "./notification-row";
-
-function formatDateTime(date: Date) {
-  return new Intl.DateTimeFormat("ar-IQ", { dateStyle: "medium", timeStyle: "short" }).format(date);
-}
+import { formatDateTime } from "@/lib/utils/date";
 
 export default async function NotificationsPage() {
   const { workspace, user } = await requireWorkspace();

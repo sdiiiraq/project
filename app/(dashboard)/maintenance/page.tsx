@@ -5,14 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateEquipmentDialog } from "@/components/maintenance/create-equipment-dialog";
 import { CreateMaintenanceDialog } from "@/components/maintenance/create-maintenance-dialog";
 import { formatMoney } from "@/lib/utils/money";
+import { formatDate, formatDateTime } from "@/lib/utils/date";
 import { Wrench } from "lucide-react";
-
-function formatDate(date: Date) {
-  return new Intl.DateTimeFormat("ar-IQ", { year: "numeric", month: "short", day: "numeric" }).format(date);
-}
-function formatDateTime(date: Date) {
-  return new Intl.DateTimeFormat("ar-IQ", { dateStyle: "medium", timeStyle: "short" }).format(date);
-}
 
 export default async function MaintenancePage() {
   const { workspace, role } = await requireWorkspace();

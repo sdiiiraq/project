@@ -9,10 +9,7 @@ import { AddCreditDialog } from "@/components/admin/add-credit-dialog";
 import { FeatureOverrideToggle } from "@/components/admin/feature-override-toggle";
 import { ImpersonateButton } from "@/components/admin/impersonate-button";
 import { formatMoney } from "@/lib/utils/money";
-
-function formatDate(date: Date) {
-  return new Intl.DateTimeFormat("ar-IQ", { year: "numeric", month: "long", day: "numeric" }).format(date);
-}
+import { formatDate } from "@/lib/utils/date";
 
 const ROLE_LABELS: Record<string, string> = {
   OWNER: "المالك", ADMIN: "مدير", ACCOUNTANT: "محاسب", COLLECTOR: "جابي", MAINTENANCE: "صيانة", VIEWER: "مشاهد",

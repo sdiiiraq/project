@@ -5,11 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateFuelPurchaseDialog } from "@/components/fuel/create-fuel-purchase-dialog";
 import { CreateFuelUsageDialog } from "@/components/fuel/create-fuel-usage-dialog";
 import { formatMoney } from "@/lib/utils/money";
+import { formatDate } from "@/lib/utils/date";
 import { Fuel } from "lucide-react";
-
-function formatDate(date: Date) {
-  return new Intl.DateTimeFormat("ar-IQ", { year: "numeric", month: "short", day: "numeric" }).format(date);
-}
 
 export default async function FuelPage() {
   const { workspace, role } = await requireWorkspace();

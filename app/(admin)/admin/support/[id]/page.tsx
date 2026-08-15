@@ -5,11 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TicketStatusBadge } from "@/components/support/ticket-status-badge";
 import { AdminReplyForm } from "@/components/support/admin-reply-form";
 import { AdminTicketStatusSelect } from "@/components/admin/ticket-status-select";
+import { formatDateTime } from "@/lib/utils/date";
 import { cn } from "@/lib/utils";
-
-function formatDateTime(date: Date) {
-  return new Intl.DateTimeFormat("ar-IQ", { dateStyle: "medium", timeStyle: "short" }).format(date);
-}
 
 export default async function AdminTicketDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

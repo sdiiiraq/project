@@ -9,11 +9,8 @@ import { CustomerStatusBadge } from "@/components/customers/status-badge";
 import { RecordPaymentDialog } from "@/components/customers/record-payment-dialog";
 import { ChangeAmpereDialog } from "@/components/customers/change-ampere-dialog";
 import { formatMoney } from "@/lib/utils/money";
+import { formatDate } from "@/lib/utils/date";
 import { MapPin, Phone, Zap } from "lucide-react";
-
-function formatDate(date: Date) {
-  return new Intl.DateTimeFormat("ar-IQ", { year: "numeric", month: "long", day: "numeric" }).format(date);
-}
 
 export default async function CustomerProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

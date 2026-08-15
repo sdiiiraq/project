@@ -5,10 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CreateTicketDialog } from "@/components/support/create-ticket-dialog";
 import { TicketStatusBadge } from "@/components/support/ticket-status-badge";
 import { LifeBuoy, ChevronLeft } from "lucide-react";
-
-function formatDate(date: Date) {
-  return new Intl.DateTimeFormat("ar-IQ", { year: "numeric", month: "short", day: "numeric" }).format(date);
-}
+import { formatDate } from "@/lib/utils/date";
 
 export default async function SupportPage() {
   const { workspace } = await requireWorkspace();

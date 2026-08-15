@@ -4,11 +4,8 @@ import { db } from "@/lib/db";
 import { Card, CardContent } from "@/components/ui/card";
 import { CreateExpenseDialog } from "@/components/expenses/create-expense-dialog";
 import { formatMoney } from "@/lib/utils/money";
+import { formatDate } from "@/lib/utils/date";
 import { Receipt } from "lucide-react";
-
-function formatDate(date: Date) {
-  return new Intl.DateTimeFormat("ar-IQ", { year: "numeric", month: "short", day: "numeric" }).format(date);
-}
 
 export default async function ExpensesPage() {
   const { workspace, role } = await requireWorkspace();
