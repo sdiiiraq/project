@@ -31,7 +31,6 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "الرئيسية", icon: "LayoutDashboard", mobilePriority: 1, group: "عام" },
   { href: "/customers", label: "المشتركين", icon: "Users", permission: "customers.read", mobilePriority: 2, group: "المشتركين" },
   { href: "/subscriptions", label: "الاشتراكات", icon: "FileText", permission: "subscriptions.read", group: "المشتركين" },
-  { href: "/collectors", label: "الجباة", icon: "UserCog", permission: "collectors.manage", group: "المشتركين" },
   { href: "/expenses", label: "المصاريف", icon: "Receipt", permission: "expenses.read", mobilePriority: 4, group: "التشغيل" },
   { href: "/fuel", label: "الوقود", icon: "Fuel", permission: "fuel.read", mobilePriority: 3, group: "التشغيل" },
   { href: "/maintenance", label: "الصيانة", icon: "Wrench", permission: "maintenance.read", group: "التشغيل" },

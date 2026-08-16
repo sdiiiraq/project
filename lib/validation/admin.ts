@@ -19,7 +19,7 @@ export const extendTrialSchema = z.object({
 
 export const addBillingCreditSchema = z.object({
   workspaceId: z.string().uuid(),
-  amount: z.coerce.number().positive(),
+  amount: z.coerce.number().int("المبلغ يجب أن يكون رقمًا صحيحًا بدون كسور").positive(),
   note: z.string().optional(),
 });
 
@@ -34,10 +34,9 @@ export const upsertPlanSchema = z.object({
   id: z.string().uuid().optional(),
   slug: z.string().min(2),
   name: z.string().min(2),
-  price: z.coerce.number().min(0),
+  price: z.coerce.number().int("السعر يجب أن يكون رقمًا صحيحًا بدون كسور").min(0),
   customerLimit: z.coerce.number().int().positive().optional().nullable(),
   userLimit: z.coerce.number().int().positive().optional().nullable(),
-  collectorLimit: z.coerce.number().int().positive().optional().nullable(),
 });
 
 export type ExtendTrialInput = z.infer<typeof extendTrialSchema>;

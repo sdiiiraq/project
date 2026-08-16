@@ -60,7 +60,7 @@ export function PlanFormDialog({ plan }: { plan?: UpsertPlanInput }) {
             <Label htmlFor="price">السعر الشهري (د.ع)</Label>
             <Input id="price" type="number" {...register("price")} />
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="customerLimit">حد المشتركين</Label>
               <Input id="customerLimit" type="number" placeholder="بلا حد" {...register("customerLimit")} />
@@ -68,10 +68,6 @@ export function PlanFormDialog({ plan }: { plan?: UpsertPlanInput }) {
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="userLimit">حد المستخدمين</Label>
               <Input id="userLimit" type="number" placeholder="بلا حد" {...register("userLimit")} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="collectorLimit">حد الجباة</Label>
-              <Input id="collectorLimit" type="number" placeholder="بلا حد" {...register("collectorLimit")} />
             </div>
           </div>
           <div className="flex gap-3">

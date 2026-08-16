@@ -33,7 +33,6 @@ export default async function AdminPlansPage() {
                     price: Number(plan.price),
                     customerLimit: plan.customerLimit,
                     userLimit: plan.userLimit,
-                    collectorLimit: plan.collectorLimit,
                   }}
                 />
               </div>

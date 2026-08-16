@@ -52,6 +52,13 @@ export default async function CustomerProfilePage({ params }: { params: Promise<
   const goldPrice = Number(ws?.goldAmperePriceIQD ?? 0);
 
   const activeSubscription = customer.subscriptions[0];
+  // السعر الحالي المعروض هنا يُحسب دائمًا من سعر الأمبير الحالي في الإعدادات حسب نوع اشتراك المشترك
+  // (وليس من سعر الاشتراك المخزَّن وقت آخر تعديل) — كي ينعكس أي تغيير في السعر فورًا عند عرض المشترك،
+  // دون أن يمس هذا فواتير الاشتراك السابقة (تبقى محفوظة بسعرها وقت إصدارها، بلا تعديل رجعي).
+  const currentPricePerAmpere = activeSubscription
+    ? (activeSubscription.tier === "GOLD" ? goldPrice : normalPrice)
+    : 0;
+  const currentMonthlyPrice = activeSubscription ? currentPricePerAmpere * activeSubscription.amperes : 0;
   const totalDue = customer.invoices.reduce((sum, inv) => sum + Number(inv.amount), 0);
   const totalPaid = customer.invoices.reduce((sum, inv) => sum + Number(inv.paidAmount), 0);
   const outstanding = totalDue - totalPaid;
@@ -89,9 +96,7 @@ export default async function CustomerProfilePage({ params }: { params: Promise<
               customerName={customer.name}
               outstanding={outstanding}
               subscriptionAmperes={activeSubscription?.amperes ?? 0}
-              subscriptionPrice={
-                activeSubscription ? Math.round(Number(activeSubscription.price) / activeSubscription.amperes) : 0
-              }
+              subscriptionPrice={currentPricePerAmpere}
             />
           )}
           {canUpdateCustomer && (
@@ -163,7 +168,7 @@ export default async function CustomerProfilePage({ params }: { params: Promise<
               <div className="flex items-center gap-2 text-sm">
                 <Zap className="h-4 w-4 text-muted-foreground" />
                 {activeSubscription
-                  ? `${activeSubscription.amperes} أمبير (${TIER_LABELS[activeSubscription.tier]}) — ${formatMoney(Number(activeSubscription.price))} شهريًا`
+                  ? `${activeSubscription.amperes} أمبير (${TIER_LABELS[activeSubscription.tier]}) — ${formatMoney(currentMonthlyPrice)} شهريًا`
                   : "لا يوجد اشتراك فعّال"}
               </div>
               <div className="flex items-center gap-2 text-sm">

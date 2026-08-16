@@ -7,7 +7,6 @@ const FEATURES = [
   { key: "FEATURE_ADVANCED_ANALYTICS", name: "التحليلات المتقدمة" },
   { key: "FEATURE_FUEL", name: "إدارة الوقود" },
   { key: "FEATURE_MAINTENANCE", name: "الصيانة" },
-  { key: "FEATURE_COLLECTORS", name: "الجباة" },
   { key: "FEATURE_EXPORT", name: "تصدير البيانات" },
   { key: "FEATURE_PDF_REPORTS", name: "تقارير PDF" },
   { key: "FEATURE_MULTI_GENERATOR", name: "تعدد المولدات" },
@@ -22,7 +21,6 @@ const PLANS = [
     price: 25000,
     customerLimit: 100,
     userLimit: 3,
-    collectorLimit: 1,
     features: ["FEATURE_FUEL", "FEATURE_MAINTENANCE", "FEATURE_EXPORT", "FEATURE_NOTIFICATIONS"],
   },
   {
@@ -31,9 +29,8 @@ const PLANS = [
     price: 50000,
     customerLimit: 500,
     userLimit: 10,
-    collectorLimit: 5,
     features: [
-      "FEATURE_FUEL", "FEATURE_MAINTENANCE", "FEATURE_COLLECTORS", "FEATURE_EXPORT",
+      "FEATURE_FUEL", "FEATURE_MAINTENANCE", "FEATURE_EXPORT",
       "FEATURE_PDF_REPORTS", "FEATURE_NOTIFICATIONS", "FEATURE_ADVANCED_REPORTS",
     ],
   },
@@ -43,7 +40,6 @@ const PLANS = [
     price: 90000,
     customerLimit: null,
     userLimit: null,
-    collectorLimit: null,
     features: FEATURES.map((f) => f.key),
   },
 ];
@@ -56,14 +52,13 @@ async function main() {
   for (const plan of PLANS) {
     const created = await db.platformPlan.upsert({
       where: { slug: plan.slug },
-      update: { name: plan.name, price: plan.price, customerLimit: plan.customerLimit, userLimit: plan.userLimit, collectorLimit: plan.collectorLimit },
+      update: { name: plan.name, price: plan.price, customerLimit: plan.customerLimit, userLimit: plan.userLimit },
       create: {
         slug: plan.slug,
         name: plan.name,
         price: plan.price,
         customerLimit: plan.customerLimit,
         userLimit: plan.userLimit,
-        collectorLimit: plan.collectorLimit,
       },
     });
 

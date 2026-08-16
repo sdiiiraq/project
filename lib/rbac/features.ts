@@ -21,7 +21,7 @@ export async function canUseFeature(workspaceId: string, featureKey: string): Pr
 
 export async function canUseLimit(
   workspaceId: string,
-  metric: "customers" | "users" | "collectors",
+  metric: "customers" | "users",
   currentCount: number,
 ): Promise<{ allowed: boolean; limit: number | null }> {
   const subscription = await db.platformSubscription.findUnique({
@@ -34,7 +34,6 @@ export async function canUseLimit(
   const limitMap: Record<typeof metric, number | null> = {
     customers: subscription.plan.customerLimit,
     users: subscription.plan.userLimit,
-    collectors: subscription.plan.collectorLimit,
   } as const;
 
   const limit = limitMap[metric];

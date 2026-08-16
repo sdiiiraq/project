@@ -7,7 +7,6 @@ export type HelpPageKey =
   | "customers.new"
   | "customers.detail"
   | "subscriptions"
-  | "collectors"
   | "expenses"
   | "fuel"
   | "maintenance"
@@ -23,7 +22,6 @@ export const HELP_PAGE_OPTIONS: { key: HelpPageKey; label: string }[] = [
   { key: "customers.new", label: "إضافة مشترك جديد" },
   { key: "customers.detail", label: "ملف المشترك" },
   { key: "subscriptions", label: "صفحة الاشتراكات" },
-  { key: "collectors", label: "صفحة الجباة" },
   { key: "expenses", label: "صفحة المصاريف" },
   { key: "fuel", label: "صفحة الوقود" },
   { key: "maintenance", label: "صفحة الصيانة" },

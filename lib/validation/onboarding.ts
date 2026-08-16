@@ -16,8 +16,8 @@ export const generatorInfoSchema = z.object({
 });
 
 export const pricePerAmpereSchema = z.object({
-  normalAmperePriceIQD: z.coerce.number().positive("السعر يجب أن يكون أكبر من صفر"),
-  goldAmperePriceIQD: z.coerce.number().positive("السعر يجب أن يكون أكبر من صفر"),
+  normalAmperePriceIQD: z.coerce.number().int("السعر يجب أن يكون رقمًا صحيحًا بدون كسور").positive("السعر يجب أن يكون أكبر من صفر"),
+  goldAmperePriceIQD: z.coerce.number().int("السعر يجب أن يكون رقمًا صحيحًا بدون كسور").positive("السعر يجب أن يكون أكبر من صفر"),
 });
 
 export type GeneratorNameInput = z.infer<typeof generatorNameSchema>;

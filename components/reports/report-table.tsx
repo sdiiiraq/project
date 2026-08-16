@@ -19,7 +19,15 @@ export function ReportTable({
   function exportCsv() {
     const header = columns.map((c) => c.label).join(",");
     const body = rows
-      .map((row) => columns.map((c) => `"${String(row[c.key] ?? "").replace(/"/g, '""')}"`).join(","))
+      .map((row) =>
+        columns
+          .map((c) => {
+            const cell = row[c.key];
+            const value = MONEY_KEYS.has(c.key) && typeof cell === "number" ? Math.round(cell) : (cell ?? "");
+            return `"${String(value).replace(/"/g, '""')}"`;
+          })
+          .join(","),
+      )
       .join("\n");
     const csv = `﻿${header}\n${body}`;
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });

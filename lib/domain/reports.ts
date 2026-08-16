@@ -121,12 +121,19 @@ export async function getReportData(
       };
     }
     case "profit": {
-      const [payments, expenses] = await Promise.all([
+      // صافي الربح = الدافع الفعلي - كل التكاليف التي أدخلها المستخدم فعليًا (مصاريف + وقود + صيانة)
+      // — نفس منطق صافي الربح في لوحة التحكم، بلا أي رسوم أو عمولات مضافة من النظام.
+      const [payments, expenses, fuelPurchases, maintenanceRecords] = await Promise.all([
         db.payment.findMany({ where: { workspaceId, date: { gte: range.from, lte: range.to } } }),
         db.expense.findMany({ where: { workspaceId, date: { gte: range.from, lte: range.to } } }),
+        db.fuelPurchase.findMany({ where: { workspaceId, date: { gte: range.from, lte: range.to } } }),
+        db.maintenanceRecord.findMany({ where: { workspaceId, date: { gte: range.from, lte: range.to } } }),
       ]);
       const revenue = payments.reduce((s, p) => s + Number(p.amount), 0);
       const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
+      const totalFuel = fuelPurchases.reduce((s, p) => s + Number(p.totalCost), 0);
+      const totalMaintenance = maintenanceRecords.reduce((s, r) => s + Number(r.cost), 0);
+      const totalCosts = totalExpenses + totalFuel + totalMaintenance;
       return {
         columns: [
           { key: "label", label: "البند" },
@@ -134,34 +141,11 @@ export async function getReportData(
         ],
         rows: [
           { label: "إجمالي الدافع", amount: revenue },
-          { label: "إجمالي المصروفات", amount: totalExpenses },
-          { label: "صافي الربح", amount: revenue - totalExpenses },
+          { label: "المصاريف", amount: totalExpenses },
+          { label: "الوقود", amount: totalFuel },
+          { label: "الصيانة", amount: totalMaintenance },
+          { label: "صافي الربح", amount: revenue - totalCosts },
         ],
-      };
-    }
-    case "collector": {
-      const settlements = await db.collectorSettlement.findMany({
-        where: { workspaceId, periodStart: { gte: range.from }, periodEnd: { lte: range.to } },
-        orderBy: { createdAt: "desc" },
-      });
-      const collectorIds = [...new Set(settlements.map((s) => s.collectorUserId))];
-      const users = await db.user.findMany({ where: { id: { in: collectorIds } } });
-      const userMap = new Map(users.map((u) => [u.id, u.fullName]));
-      return {
-        columns: [
-          { key: "collector", label: "الجابي" },
-          { key: "expected", label: "المتوقع" },
-          { key: "actual", label: "الفعلي" },
-          { key: "difference", label: "الفرق" },
-          { key: "status", label: "الحالة" },
-        ],
-        rows: settlements.map((s) => ({
-          collector: userMap.get(s.collectorUserId) ?? "—",
-          expected: Number(s.expectedAmount),
-          actual: Number(s.actualAmount),
-          difference: Number(s.difference),
-          status: s.status,
-        })),
       };
     }
     case "customer": {

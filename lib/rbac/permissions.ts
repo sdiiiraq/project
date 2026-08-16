@@ -10,7 +10,6 @@ export const PERMISSIONS = {
   "payments.read": "عرض الدفعات",
   "payments.create": "تسجيل دفعة",
   "payments.adjust": "تصحيح دفعة",
-  "collectors.manage": "إدارة الجباة والتسويات",
   "expenses.read": "عرض المصاريف",
   "expenses.create": "إضافة مصروف",
   "fuel.read": "عرض الوقود",

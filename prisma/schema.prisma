@@ -28,7 +28,6 @@ model User {
 
   ownedWorkspaces      Workspace[]         @relation("WorkspaceOwner")
   memberships          WorkspaceMember[]
-  collectorAssignments CollectorAssignment[] @relation("CollectorAssignmentCollector")
   auditLogs            AuditLog[]
   notifications        Notification[]
   supportTickets       SupportTicket[]
@@ -64,8 +63,8 @@ model Workspace {
   status    WorkspaceStatus @default(ACTIVE)
   region    String?
   address   String?
-  normalAmperePriceIQD Decimal? @db.Decimal(14, 2)
-  goldAmperePriceIQD   Decimal? @db.Decimal(14, 2)
+  normalAmperePriceIQD Int?
+  goldAmperePriceIQD   Int?
   onboardedAt DateTime?
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
@@ -78,8 +77,6 @@ model Workspace {
   payments             Payment[]
   financialPeriods     FinancialPeriod[]
   ledgerEntries        LedgerEntry[]
-  collectorAssignments CollectorAssignment[]
-  collectorSettlements CollectorSettlement[]
   expenseCategories    ExpenseCategory[]
   expenses             Expense[]
   fuelPurchases        FuelPurchase[]
@@ -177,7 +174,7 @@ model AmperePlan {
   workspace    Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   amperes      Int
   tier         SubscriptionTier @default(NORMAL)
-  monthlyPrice Decimal          @db.Decimal(14, 2)
+  monthlyPrice Int
   isCustom     Boolean          @default(false)
   isActive     Boolean          @default(true)
   createdAt    DateTime         @default(now())
@@ -231,7 +228,6 @@ model Customer {
   ampereHistory  CustomerAmpereHistory[]
   invoices       Invoice[]
   payments       Payment[]
-  collectorAssignments CollectorAssignment[]
 
   @@unique([workspaceId, subscriberNumber])
   @@index([workspaceId, status])
@@ -246,8 +242,8 @@ model CustomerAmpereHistory {
   oldAmperes    Int?
   newAmperes    Int
   effectiveDate DateTime
-  oldPrice      Decimal? @db.Decimal(14, 2)
-  newPrice      Decimal  @db.Decimal(14, 2)
+  oldPrice      Int?
+  newPrice      Int
   reason        String?
   changedByUserId String @db.Uuid
   createdAt     DateTime @default(now())
@@ -273,7 +269,7 @@ model CustomerSubscription {
   amperePlan   AmperePlan         @relation(fields: [amperePlanId], references: [id])
   amperes      Int
   tier         SubscriptionTier   @default(NORMAL)
-  price        Decimal            @db.Decimal(14, 2)
+  price        Int
   startDate    DateTime
   endDate      DateTime?
   status       SubscriptionStatus @default(ACTIVE)
@@ -307,8 +303,8 @@ model Invoice {
   subscription   CustomerSubscription  @relation(fields: [subscriptionId], references: [id])
   periodStart    DateTime
   periodEnd      DateTime
-  amount         Decimal               @db.Decimal(14, 2)
-  paidAmount     Decimal               @default(0) @db.Decimal(14, 2)
+  amount         Int
+  paidAmount     Int                   @default(0)
   status         InvoiceStatus         @default(UNPAID)
   createdAt      DateTime              @default(now())
   updatedAt      DateTime              @updatedAt
@@ -330,9 +326,8 @@ model Payment {
   customer        Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   invoiceId       String?  @db.Uuid
   invoice         Invoice? @relation(fields: [invoiceId], references: [id])
-  amount          Decimal  @db.Decimal(14, 2)
+  amount          Int
   date            DateTime @default(now())
-  collectorUserId String?  @db.Uuid
   method          String   @default("CASH")
   note            String?
   createdByUserId String   @db.Uuid
@@ -351,7 +346,7 @@ model PaymentAdjustment {
   id            String   @id @default(uuid()) @db.Uuid
   paymentId     String   @db.Uuid
   payment       Payment  @relation(fields: [paymentId], references: [id])
-  amount        Decimal  @db.Decimal(14, 2)
+  amount        Int
   reason        String
   actorUserId   String   @db.Uuid
   createdAt     DateTime @default(now())
@@ -389,57 +384,12 @@ model LedgerEntry {
   referenceId String
   paymentId   String?         @unique @db.Uuid
   payment     Payment?        @relation(fields: [paymentId], references: [id])
-  amount      Decimal         @db.Decimal(14, 2)
+  amount      Int
   description String?
   createdAt   DateTime        @default(now())
 
   @@index([workspaceId, type])
   @@map("ledger_entries")
-}
-
-// ============================================================
-// Collectors
-// ============================================================
-
-model CollectorAssignment {
-  id              String    @id @default(uuid()) @db.Uuid
-  workspaceId     String    @db.Uuid
-  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  collectorUserId String    @db.Uuid
-  collector       User      @relation("CollectorAssignmentCollector", fields: [collectorUserId], references: [id])
-  customerId      String    @db.Uuid
-  customer        Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  assignedAt      DateTime  @default(now())
-  unassignedAt    DateTime?
-
-  @@index([workspaceId, collectorUserId])
-  @@map("collector_assignments")
-}
-
-enum SettlementStatus {
-  PENDING
-  COMPLETED
-  DISPUTED
-}
-
-model CollectorSettlement {
-  id              String           @id @default(uuid()) @db.Uuid
-  workspaceId     String           @db.Uuid
-  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  collectorUserId String           @db.Uuid
-  periodStart     DateTime
-  periodEnd       DateTime
-  expectedAmount  Decimal          @db.Decimal(14, 2)
-  actualAmount    Decimal          @db.Decimal(14, 2)
-  difference      Decimal          @db.Decimal(14, 2)
-  status          SettlementStatus @default(PENDING)
-  settledByUserId String?          @db.Uuid
-  settledAt       DateTime?
-  notes           String?
-  createdAt       DateTime         @default(now())
-
-  @@index([workspaceId, collectorUserId])
-  @@map("collector_settlements")
 }
 
 // ============================================================
@@ -464,7 +414,7 @@ model Expense {
   workspace       Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   categoryId      String          @db.Uuid
   category        ExpenseCategory @relation(fields: [categoryId], references: [id])
-  amount          Decimal         @db.Decimal(14, 2)
+  amount          Int
   date            DateTime
   vendor          String?
   note            String?
@@ -481,8 +431,8 @@ model FuelPurchase {
   workspaceId     String   @db.Uuid
   workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   quantityLiters  Decimal  @db.Decimal(10, 2)
-  pricePerLiter   Decimal  @db.Decimal(10, 2)
-  totalCost       Decimal  @db.Decimal(14, 2)
+  pricePerLiter   Int
+  totalCost       Int
   supplier        String?
   date            DateTime
   createdByUserId String   @db.Uuid
@@ -532,7 +482,7 @@ model MaintenanceRecord {
   equipment           Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
   type                String
   date                DateTime
-  cost                Decimal   @db.Decimal(14, 2)
+  cost                Int
   parts               String?
   technician          String?
   notes               String?
@@ -619,12 +569,11 @@ model PlatformPlan {
   id              String   @id @default(uuid()) @db.Uuid
   name            String
   slug            String   @unique
-  price           Decimal  @db.Decimal(14, 2)
+  price           Int
   currency        String   @default("IQD")
   billingCycle    String   @default("MONTHLY")
   customerLimit   Int?
   userLimit       Int?
-  collectorLimit  Int?
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
 
@@ -662,7 +611,7 @@ model Usage {
   id          String   @id @default(uuid()) @db.Uuid
   workspaceId String   @db.Uuid
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  metric      String   // customers | users | collectors | storage_mb | ai_requests | reports
+  metric      String   // customers | users | storage_mb | ai_requests | reports
   value       Int
   periodStart DateTime
   periodEnd   DateTime
@@ -692,7 +641,7 @@ model PlatformSubscription {
   trialEnd     DateTime?
   startDate    DateTime                    @default(now())
   endDate      DateTime?
-  price        Decimal                     @db.Decimal(14, 2)
+  price        Int
   currency     String                      @default("IQD")
   autoRenew    Boolean                     @default(true)
   notes        String?
@@ -708,7 +657,7 @@ model BillingTransaction {
   id                      String                @id @default(uuid()) @db.Uuid
   platformSubscriptionId  String                @db.Uuid
   platformSubscription    PlatformSubscription  @relation(fields: [platformSubscriptionId], references: [id], onDelete: Cascade)
-  amount                  Decimal               @db.Decimal(14, 2)
+  amount                  Int
   currency                String                @default("IQD")
   type                    String                // CHARGE | CREDIT | REFUND | MANUAL_ADJUSTMENT
   provider                String                @default("MANUAL")

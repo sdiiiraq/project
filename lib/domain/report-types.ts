@@ -1,4 +1,4 @@
-export type ReportType = "collection" | "outstanding" | "expense" | "fuel" | "maintenance" | "profit" | "collector" | "customer";
+export type ReportType = "collection" | "outstanding" | "expense" | "fuel" | "maintenance" | "profit" | "customer";
 
 export const REPORT_LABELS: Record<ReportType, string> = {
   collection: "التحصيل",
@@ -7,7 +7,6 @@ export const REPORT_LABELS: Record<ReportType, string> = {
   fuel: "الوقود",
   maintenance: "الصيانة",
   profit: "الأرباح",
-  collector: "الجباة",
   customer: "المشتركين",
 };
 

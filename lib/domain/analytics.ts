@@ -60,9 +60,11 @@ export async function getAdvancedAnalyticsData(workspaceId: string) {
   const now = new Date();
   const sixMonthsAgo = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 5, 1));
 
-  const [invoices, expenses, disconnectedLogs] = await Promise.all([
+  const [invoices, expenses, fuelPurchases, maintenanceRecords, disconnectedLogs] = await Promise.all([
     db.invoice.findMany({ where: { workspaceId, periodStart: { gte: sixMonthsAgo } } }),
     db.expense.findMany({ where: { workspaceId, date: { gte: sixMonthsAgo } } }),
+    db.fuelPurchase.findMany({ where: { workspaceId, date: { gte: sixMonthsAgo } } }),
+    db.maintenanceRecord.findMany({ where: { workspaceId, date: { gte: sixMonthsAgo } } }),
     db.auditLog.findMany({
       where: { workspaceId, action: "customer.status_change", createdAt: { gte: sixMonthsAgo } },
     }),
@@ -70,13 +72,20 @@ export async function getAdvancedAnalyticsData(workspaceId: string) {
 
   const months = lastNMonths(6, now);
 
+  // هامش الربح = (الدافع - كل التكاليف الفعلية التي أدخلها المستخدم: مصاريف + وقود + صيانة) / الدافع
+  // — يطابق نفس منطق صافي الربح في لوحة التحكم، بلا أي رسوم أو تكاليف مضافة من النظام.
   const profitMarginTrend = months.map(({ year, month }) => {
     const { periodStart, periodEnd } = monthRange(year, month);
     const monthInvoices = invoices.filter((i) => i.periodStart >= periodStart && i.periodStart <= periodEnd);
     const monthExpenses = expenses.filter((e) => e.date >= periodStart && e.date <= periodEnd);
+    const monthFuel = fuelPurchases.filter((p) => p.date >= periodStart && p.date <= periodEnd);
+    const monthMaintenance = maintenanceRecords.filter((r) => r.date >= periodStart && r.date <= periodEnd);
     const collected = monthInvoices.reduce((s, i) => s + Number(i.paidAmount), 0);
-    const expensesTotal = monthExpenses.reduce((s, e) => s + Number(e.amount), 0);
-    const margin = collected > 0 ? Math.round(((collected - expensesTotal) / collected) * 100) : 0;
+    const costsTotal =
+      monthExpenses.reduce((s, e) => s + Number(e.amount), 0) +
+      monthFuel.reduce((s, p) => s + Number(p.totalCost), 0) +
+      monthMaintenance.reduce((s, r) => s + Number(r.cost), 0);
+    const margin = collected > 0 ? Math.round(((collected - costsTotal) / collected) * 100) : 0;
     return { month: formatMonthLabel(month), "هامش الربح": margin };
   });
 

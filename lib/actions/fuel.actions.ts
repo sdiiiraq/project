@@ -27,7 +27,7 @@ export async function createFuelPurchase(input: unknown): Promise<ActionResult> 
     throw e;
   }
 
-  const totalCost = parsed.data.quantityLiters * parsed.data.pricePerLiter;
+  const totalCost = Math.round(parsed.data.quantityLiters * parsed.data.pricePerLiter);
 
   await db.$transaction(async (tx) => {
     const purchase = await tx.fuelPurchase.create({
@@ -74,7 +74,7 @@ export async function updateFuelPurchase(input: unknown): Promise<ActionResult> 
   const existing = await db.fuelPurchase.findFirst({ where: { id: parsed.data.id, workspaceId: workspace.id } });
   if (!existing) return { error: "سجل الشراء غير موجود." };
 
-  const totalCost = parsed.data.quantityLiters * parsed.data.pricePerLiter;
+  const totalCost = Math.round(parsed.data.quantityLiters * parsed.data.pricePerLiter);
 
   await db.$transaction(async (tx) => {
     await tx.fuelPurchase.update({

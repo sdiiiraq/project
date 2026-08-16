@@ -7,7 +7,3 @@ export function formatMoney(amount: number | string): string {
   const value = typeof amount === "string" ? Number(amount) : amount;
   return `${IQD_FORMATTER.format(value)} د.ع`;
 }
-
-export function toDecimalString(amount: number): string {
-  return amount.toFixed(2);
-}
