@@ -6,6 +6,7 @@ import { CreateFuelPurchaseDialog } from "@/components/fuel/create-fuel-purchase
 import { CreateFuelUsageDialog } from "@/components/fuel/create-fuel-usage-dialog";
 import { EditFuelPurchaseDialog } from "@/components/fuel/edit-fuel-purchase-dialog";
 import { EditFuelUsageDialog } from "@/components/fuel/edit-fuel-usage-dialog";
+import { PageHelp } from "@/components/help/page-help";
 import { formatMoney } from "@/lib/utils/money";
 import { formatDate } from "@/lib/utils/date";
 import { Fuel } from "lucide-react";
@@ -62,12 +63,15 @@ export default async function FuelPage() {
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl">الوقود</h1>
           <p className="text-sm text-muted-foreground">المخزون الحالي: {currentStock.toLocaleString("ar-IQ")} لتر</p>
         </div>
-        {canCreate && (
-          <div className="flex gap-2">
-            <CreateFuelUsageDialog />
-            <CreateFuelPurchaseDialog />
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          <PageHelp pageKey="fuel" />
+          {canCreate && (
+            <div className="flex gap-2">
+              <CreateFuelUsageDialog />
+              <CreateFuelPurchaseDialog />
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">

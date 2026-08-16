@@ -8,6 +8,7 @@ import { AmperePricingSettingsForm } from "./ampere-plans-settings-form";
 import { AddEmployeeDialog } from "@/components/settings/add-employee-dialog";
 import { EditEmployeePermissionsDialog } from "@/components/settings/edit-employee-permissions-dialog";
 import { InstallAppCard } from "@/components/pwa/install-app-card";
+import { PageHelp } from "@/components/help/page-help";
 import { permissionLabel } from "@/lib/rbac/permission-groups";
 import type { PermissionKey } from "@/lib/rbac/permissions";
 
@@ -35,9 +36,12 @@ export default async function SettingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">الإعدادات</h1>
-        <p className="text-sm text-muted-foreground">إدارة بيانات المولدة، أسعار الأمبير، وفريق العمل.</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">الإعدادات</h1>
+          <p className="text-sm text-muted-foreground">إدارة بيانات المولدة، أسعار الأمبير، وفريق العمل.</p>
+        </div>
+        <PageHelp pageKey="settings" />
       </div>
 
       <Card>

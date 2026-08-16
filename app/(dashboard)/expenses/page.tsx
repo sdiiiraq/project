@@ -3,6 +3,7 @@ import { requirePermission, roleHasPermission } from "@/lib/rbac/access";
 import { db } from "@/lib/db";
 import { Card, CardContent } from "@/components/ui/card";
 import { CreateExpenseDialog } from "@/components/expenses/create-expense-dialog";
+import { PageHelp } from "@/components/help/page-help";
 import { formatMoney } from "@/lib/utils/money";
 import { formatDate } from "@/lib/utils/date";
 import { Receipt } from "lucide-react";
@@ -34,7 +35,10 @@ export default async function ExpensesPage() {
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl">المصاريف</h1>
           <p className="text-sm text-muted-foreground">إجمالي آخر 50 سجل: {formatMoney(total)}</p>
         </div>
-        {canCreate && <CreateExpenseDialog categories={categories.map((c) => ({ id: c.id, name: c.name }))} />}
+        <div className="flex items-center gap-2">
+          <PageHelp pageKey="expenses" />
+          {canCreate && <CreateExpenseDialog categories={categories.map((c) => ({ id: c.id, name: c.name }))} />}
+        </div>
       </div>
 
       {expenses.length === 0 ? (

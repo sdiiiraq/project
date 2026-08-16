@@ -4,6 +4,7 @@ import { requirePermission } from "@/lib/rbac/access";
 import { db } from "@/lib/db";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PageHelp } from "@/components/help/page-help";
 import { formatMoney } from "@/lib/utils/money";
 import { FileText } from "lucide-react";
 import type { SubscriptionStatus } from "@prisma/client";
@@ -29,9 +30,12 @@ export default async function SubscriptionsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">الاشتراكات</h1>
-        <p className="text-sm text-muted-foreground">{subscriptions.length} اشتراك</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">الاشتراكات</h1>
+          <p className="text-sm text-muted-foreground">{subscriptions.length} اشتراك</p>
+        </div>
+        <PageHelp pageKey="subscriptions" />
       </div>
 
       {subscriptions.length === 0 ? (

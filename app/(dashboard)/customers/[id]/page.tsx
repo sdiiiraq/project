@@ -11,6 +11,7 @@ import { ChangeAmpereDialog } from "@/components/customers/change-ampere-dialog"
 import { EditCustomerDialog } from "@/components/customers/edit-customer-dialog";
 import { DeleteCustomerDialog } from "@/components/customers/delete-customer-dialog";
 import { ContactActions } from "@/components/customers/contact-actions";
+import { PageHelp } from "@/components/help/page-help";
 import { formatMoney } from "@/lib/utils/money";
 import { formatDate } from "@/lib/utils/date";
 import { MapPin, Phone, Zap, Tag } from "lucide-react";
@@ -72,6 +73,7 @@ export default async function CustomerProfilePage({ params }: { params: Promise<
           <p className="text-sm text-muted-foreground">#{customer.subscriberNumber}</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <PageHelp pageKey="customers.detail" />
           {canManageSubscription && (
             <ChangeAmpereDialog
               customerId={customer.id}

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AssignCollectorDialog } from "@/components/collectors/assign-collector-dialog";
 import { SettleCollectorDialog } from "@/components/collectors/settle-collector-dialog";
+import { PageHelp } from "@/components/help/page-help";
 import { formatMoney } from "@/lib/utils/money";
 import { UserCog } from "lucide-react";
 
@@ -52,10 +53,13 @@ export default async function CollectorsPage() {
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl">الجباة</h1>
           <p className="text-sm text-muted-foreground">{collectors.length} جابي</p>
         </div>
-        <AssignCollectorDialog
-          collectors={collectorMembers.map((m) => ({ userId: m.userId, name: m.user.fullName }))}
-          customers={customers}
-        />
+        <div className="flex items-center gap-2">
+          <PageHelp pageKey="collectors" />
+          <AssignCollectorDialog
+            collectors={collectorMembers.map((m) => ({ userId: m.userId, name: m.user.fullName }))}
+            customers={customers}
+          />
+        </div>
       </div>
 
       {collectors.length === 0 ? (

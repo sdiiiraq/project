@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateEquipmentDialog } from "@/components/maintenance/create-equipment-dialog";
 import { CreateMaintenanceDialog } from "@/components/maintenance/create-maintenance-dialog";
 import { DeleteMaintenanceRecordButton } from "@/components/maintenance/delete-maintenance-record-button";
+import { PageHelp } from "@/components/help/page-help";
 import { formatMoney } from "@/lib/utils/money";
 import { formatDate } from "@/lib/utils/date";
 import { Wrench, ChevronLeft, Zap } from "lucide-react";
@@ -29,9 +30,12 @@ export default async function MaintenancePage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">الصيانة</h1>
-        <p className="text-sm text-muted-foreground">{equipment.length} معدة مسجّلة</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">الصيانة</h1>
+          <p className="text-sm text-muted-foreground">{equipment.length} معدة مسجّلة</p>
+        </div>
+        <PageHelp pageKey="maintenance" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">

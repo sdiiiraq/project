@@ -4,6 +4,7 @@ import { getReportData } from "@/lib/domain/reports";
 import { REPORT_LABELS, type ReportType } from "@/lib/domain/report-types";
 import { ReportFilters } from "@/components/reports/report-filters";
 import { ReportTable } from "@/components/reports/report-table";
+import { PageHelp } from "@/components/help/page-help";
 
 function firstDayOfMonth() {
   const d = new Date();
@@ -33,9 +34,12 @@ export default async function ReportsPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">التقارير</h1>
-        <p className="text-sm text-muted-foreground">تقرير {REPORT_LABELS[type]}</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">التقارير</h1>
+          <p className="text-sm text-muted-foreground">تقرير {REPORT_LABELS[type]}</p>
+        </div>
+        <PageHelp pageKey="reports" />
       </div>
 
       <ReportFilters type={type} from={from} to={to} />

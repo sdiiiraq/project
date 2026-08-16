@@ -3,6 +3,7 @@ import { requirePermission } from "@/lib/rbac/access";
 import { db } from "@/lib/db";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { PageHelp } from "@/components/help/page-help";
 import { formatDate, formatTime } from "@/lib/utils/date";
 import { Zap } from "lucide-react";
 
@@ -22,9 +23,12 @@ export default async function OperatingSessionsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">جلسات التشغيل</h1>
-        <p className="text-sm text-muted-foreground">آخر {sessions.length} جلسة تشغيل فعلية للمولدة</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">جلسات التشغيل</h1>
+          <p className="text-sm text-muted-foreground">آخر {sessions.length} جلسة تشغيل فعلية للمولدة</p>
+        </div>
+        <PageHelp pageKey="operating-sessions" />
       </div>
 
       {sessions.length === 0 ? (

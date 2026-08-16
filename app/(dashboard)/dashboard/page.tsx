@@ -8,6 +8,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { RevenueTrendChart } from "@/components/dashboard/trend-chart";
 import { CustomerGrowthChart } from "@/components/dashboard/customer-growth-chart";
 import { OperatingSessionControl } from "@/components/maintenance/operating-session-control";
+import { PageHelp } from "@/components/help/page-help";
 import { formatMoney } from "@/lib/utils/money";
 import { formatTime } from "@/lib/utils/date";
 import { cn } from "@/lib/utils";
@@ -77,9 +78,12 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">الرئيسية</h1>
-        <p className="text-sm text-muted-foreground">نظرة عامة على {generator?.name ?? workspace.name}</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">الرئيسية</h1>
+          <p className="text-sm text-muted-foreground">نظرة عامة على {generator?.name ?? workspace.name}</p>
+        </div>
+        <PageHelp pageKey="dashboard" />
       </div>
 
       <Card className={openSession ? "border-success/30 bg-success/5" : undefined}>

@@ -12,6 +12,7 @@ import { PaymentStatusTabs } from "@/components/customers/payment-status-tabs";
 import { SearchInput } from "@/components/shared/search-input";
 import { SortSelect } from "@/components/shared/sort-select";
 import { Pagination } from "@/components/shared/pagination";
+import { PageHelp } from "@/components/help/page-help";
 import { formatMoney } from "@/lib/utils/money";
 import { Plus, Users, ChevronLeft } from "lucide-react";
 import type { Prisma, InvoiceStatus } from "@prisma/client";
@@ -117,13 +118,16 @@ export default async function CustomersPage({
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl">المشتركين</h1>
           <p className="text-sm text-muted-foreground">{total} مشترك</p>
         </div>
-        {canCreate && (
-          <Button asChild>
-            <Link href="/customers/new">
-              <Plus className="h-4 w-4" /> إضافة مشترك
-            </Link>
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <PageHelp pageKey="customers" />
+          {canCreate && (
+            <Button asChild>
+              <Link href="/customers/new">
+                <Plus className="h-4 w-4" /> إضافة مشترك
+              </Link>
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

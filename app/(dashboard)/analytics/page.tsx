@@ -7,6 +7,7 @@ import { ExpenseBreakdownChart } from "@/components/analytics/expense-breakdown-
 import { PercentageBarChart } from "@/components/analytics/percentage-bar-chart";
 import { MoneyBarChart } from "@/components/analytics/money-bar-chart";
 import { CountBarChart } from "@/components/analytics/count-bar-chart";
+import { PageHelp } from "@/components/help/page-help";
 import { Lock } from "lucide-react";
 
 export default async function AnalyticsPage() {
@@ -22,9 +23,12 @@ export default async function AnalyticsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">التحليلات</h1>
-        <p className="text-sm text-muted-foreground">آخر 6 أشهر</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">التحليلات</h1>
+          <p className="text-sm text-muted-foreground">آخر 6 أشهر</p>
+        </div>
+        <PageHelp pageKey="analytics" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
