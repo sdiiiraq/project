@@ -12,19 +12,6 @@ export function monthRange(year: number, month: number) {
   return { periodStart, periodEnd };
 }
 
-function daysInMonth(date: Date): number {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate();
-}
-
-// المشترك الجديد أو تغيير الأمبير منتصف الشهر: يُحتسب المبلغ بالتناسب مع الأيام المتبقية من الشهر
-// (شامل يوم البدء نفسه) داخل نفس الشهر التقويمي لـ fromDate.
-export function prorateAmount(monthlyPrice: number, fromDate: Date): number {
-  const totalDays = daysInMonth(fromDate);
-  const remainingDays = Math.max(1, totalDays - fromDate.getUTCDate() + 1);
-  const dailyRate = monthlyPrice / totalDays;
-  return Math.round(dailyRate * remainingDays);
-}
-
 export async function nextSubscriberNumber(tx: Tx, workspaceId: string): Promise<string> {
   const count = await tx.customer.count({ where: { workspaceId } });
   return String(count + 1).padStart(4, "0");
@@ -100,8 +87,9 @@ export async function createCustomerWithSubscription(params: {
     });
 
     const { periodStart, periodEnd } = monthRange(now.getUTCFullYear(), now.getUTCMonth() + 1);
-    const amount = prorateAmount(Number(plan.monthlyPrice), now);
 
+    // فاتورة الشهر الأول تكون بكامل قيمة الاشتراك (أمبيرات × سعر) دائمًا، بلا أي تناسب مع أيام
+    // الشهر المتبقية — المبلغ المطلوب من المشترك يطابق سعر اشتراكه دائمًا.
     const invoice = await tx.invoice.create({
       data: {
         workspaceId: params.workspaceId,
@@ -109,7 +97,7 @@ export async function createCustomerWithSubscription(params: {
         subscriptionId: subscription.id,
         periodStart,
         periodEnd,
-        amount,
+        amount: plan.monthlyPrice,
         status: "UNPAID",
       },
     });
