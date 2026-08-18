@@ -11,6 +11,7 @@ import {
   createFuelUsageSchema,
   updateFuelUsageSchema,
   deleteFuelUsageSchema,
+  updateFuelConsumptionRateSchema,
 } from "@/lib/validation/operations";
 
 export type ActionResult = { error: string } | { success: true };
@@ -238,5 +239,44 @@ export async function deleteFuelUsage(input: unknown): Promise<ActionResult> {
   });
 
   revalidatePath("/fuel");
+  return { success: true };
+}
+
+export async function updateFuelConsumptionRate(input: unknown): Promise<ActionResult> {
+  const parsed = updateFuelConsumptionRateSchema.safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
+
+  const { workspace, permissions, user } = await requireWorkspace();
+  try {
+    requirePermission(permissions, "settings.manage");
+  } catch (e) {
+    if (e instanceof ForbiddenError) return { error: e.message };
+    throw e;
+  }
+
+  const generator = await db.generator.findFirst({ where: { workspaceId: workspace.id } });
+  if (!generator) return { error: "لم يتم العثور على بيانات المولدة." };
+
+  await db.$transaction(async (tx) => {
+    await tx.generator.update({
+      where: { id: generator.id },
+      data: { fuelConsumptionPerHour: parsed.data.fuelConsumptionPerHour },
+    });
+
+    await tx.auditLog.create({
+      data: {
+        workspaceId: workspace.id,
+        actorUserId: user.id,
+        action: "generator.fuel_rate_update",
+        entity: "Generator",
+        entityId: generator.id,
+        before: { fuelConsumptionPerHour: generator.fuelConsumptionPerHour ? Number(generator.fuelConsumptionPerHour) : null },
+        after: { fuelConsumptionPerHour: parsed.data.fuelConsumptionPerHour },
+      },
+    });
+  });
+
+  revalidatePath("/fuel");
+  revalidatePath("/settings");
   return { success: true };
 }

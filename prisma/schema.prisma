@@ -156,6 +156,7 @@ model Generator {
   region       String?
   address      String?
   capacityAmps Int?
+  fuelConsumptionPerHour Decimal? @db.Decimal(10, 2)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -443,14 +444,15 @@ model FuelPurchase {
 }
 
 model FuelUsage {
-  id                 String   @id @default(uuid()) @db.Uuid
-  workspaceId        String   @db.Uuid
-  workspace          Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  operatingSessionId String?  @db.Uuid
-  quantityLiters     Decimal  @db.Decimal(10, 2)
+  id                 String            @id @default(uuid()) @db.Uuid
+  workspaceId        String            @db.Uuid
+  workspace          Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  operatingSessionId String?           @unique @db.Uuid
+  operatingSession   OperatingSession? @relation(fields: [operatingSessionId], references: [id], onDelete: Cascade)
+  quantityLiters     Decimal           @db.Decimal(10, 2)
   date               DateTime
   note               String?
-  createdAt          DateTime @default(now())
+  createdAt          DateTime          @default(now())
 
   @@index([workspaceId, date])
   @@map("fuel_usages")
@@ -506,6 +508,8 @@ model OperatingSession {
   downtimeMinutes Int       @default(0)
   downtimeReason  String?
   createdAt       DateTime  @default(now())
+
+  fuelUsage FuelUsage?
 
   @@index([workspaceId, startTime])
   @@map("operating_sessions")

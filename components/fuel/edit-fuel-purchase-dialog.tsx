@@ -28,6 +28,7 @@ export function EditFuelPurchaseDialog({ purchase, canDelete }: { purchase: Fuel
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<UpdateFuelPurchaseInput>({
     resolver: zodResolver(updateFuelPurchaseSchema),
@@ -39,6 +40,10 @@ export function EditFuelPurchaseDialog({ purchase, canDelete }: { purchase: Fuel
       date: purchase.date,
     },
   });
+
+  const quantityLiters = Number(watch("quantityLiters")) || 0;
+  const pricePerLiter = Number(watch("pricePerLiter")) || 0;
+  const totalCost = Math.round(quantityLiters * pricePerLiter);
 
   async function onSubmit(values: UpdateFuelPurchaseInput) {
     setLoading(true);
@@ -74,6 +79,9 @@ export function EditFuelPurchaseDialog({ purchase, canDelete }: { purchase: Fuel
                 <Input id={`pricePerLiter-${purchase.id}`} type="number" {...register("pricePerLiter")} />
                 {errors.pricePerLiter && <p className="text-xs text-destructive">{errors.pricePerLiter.message}</p>}
               </div>
+            </div>
+            <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
+              الإجمالي: <span className="font-semibold">{formatMoney(totalCost)}</span>
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor={`supplier-${purchase.id}`}>المورد (اختياري)</Label>

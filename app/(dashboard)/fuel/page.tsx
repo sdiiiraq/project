@@ -6,6 +6,7 @@ import { CreateFuelPurchaseDialog } from "@/components/fuel/create-fuel-purchase
 import { CreateFuelUsageDialog } from "@/components/fuel/create-fuel-usage-dialog";
 import { EditFuelPurchaseDialog } from "@/components/fuel/edit-fuel-purchase-dialog";
 import { EditFuelUsageDialog } from "@/components/fuel/edit-fuel-usage-dialog";
+import { FuelConsumptionRateForm } from "@/components/fuel/fuel-consumption-rate-form";
 import { PageHelp } from "@/components/help/page-help";
 import { formatMoney } from "@/lib/utils/money";
 import { formatDate } from "@/lib/utils/date";
@@ -15,7 +16,8 @@ export default async function FuelPage() {
   const { workspace, permissions } = await requireWorkspace();
   requirePermission(permissions, "fuel.read");
 
-  const [purchases, usages, purchaseAgg, usageAgg] = await Promise.all([
+  const [generator, purchases, usages, purchaseAgg, usageAgg] = await Promise.all([
+    db.generator.findFirst({ where: { workspaceId: workspace.id } }),
     db.fuelPurchase.findMany({ where: { workspaceId: workspace.id }, orderBy: { date: "desc" }, take: 20 }),
     db.fuelUsage.findMany({ where: { workspaceId: workspace.id }, orderBy: { date: "desc" }, take: 20 }),
     db.fuelPurchase.aggregate({ where: { workspaceId: workspace.id }, _sum: { quantityLiters: true, totalCost: true } }),
@@ -23,9 +25,11 @@ export default async function FuelPage() {
   ]);
 
   const currentStock = Number(purchaseAgg._sum.quantityLiters ?? 0) - Number(usageAgg._sum.quantityLiters ?? 0);
+  const consumptionRate = generator?.fuelConsumptionPerHour ? Number(generator.fuelConsumptionPerHour) : null;
   const canCreate = roleHasPermission(permissions, "fuel.create");
   const canUpdate = roleHasPermission(permissions, "fuel.update");
   const canDelete = roleHasPermission(permissions, "fuel.delete");
+  const canManageSettings = roleHasPermission(permissions, "settings.manage");
 
   type FuelEvent = {
     id: string;
@@ -33,6 +37,7 @@ export default async function FuelPage() {
     type: "شراء" | "استهلاك";
     quantity: number;
     cost: number | null;
+    auto: boolean;
     purchase?: { id: string; quantityLiters: number; pricePerLiter: number; supplier: string | null; date: Date };
     usage?: { id: string; quantityLiters: number; date: Date; note: string | null };
   };
@@ -44,6 +49,7 @@ export default async function FuelPage() {
       type: "شراء",
       quantity: Number(p.quantityLiters),
       cost: Number(p.totalCost),
+      auto: false,
       purchase: { id: p.id, quantityLiters: Number(p.quantityLiters), pricePerLiter: Number(p.pricePerLiter), supplier: p.supplier, date: p.date },
     })),
     ...usages.map((u): FuelEvent => ({
@@ -52,6 +58,7 @@ export default async function FuelPage() {
       type: "استهلاك",
       quantity: Number(u.quantityLiters),
       cost: null,
+      auto: u.operatingSessionId !== null,
       usage: { id: u.id, quantityLiters: Number(u.quantityLiters), date: u.date, note: u.note },
     })),
   ].sort((a, b) => b.date.getTime() - a.date.getTime());
@@ -74,7 +81,22 @@ export default async function FuelPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">إعدادات استهلاك المولد</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {canManageSettings ? (
+            <FuelConsumptionRateForm currentRate={consumptionRate} />
+          ) : (
+            <p className="text-sm">
+              {consumptionRate !== null ? `${consumptionRate.toLocaleString("ar-IQ")} لتر/ساعة` : "لم يتم ضبط معدل الاستهلاك بعد"}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">المخزون الحالي</CardTitle>
@@ -85,10 +107,12 @@ export default async function FuelPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">إجمالي المشتريات</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">الاستهلاك في الساعة</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold tracking-tight md:text-3xl">{formatMoney(Number(purchaseAgg._sum.totalCost ?? 0))}</p>
+            <p className="text-2xl font-bold tracking-tight md:text-3xl">
+              {consumptionRate !== null ? `${consumptionRate.toLocaleString("ar-IQ")} لتر` : "—"}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -97,6 +121,22 @@ export default async function FuelPage() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold tracking-tight md:text-3xl">{Number(usageAgg._sum.quantityLiters ?? 0).toLocaleString("ar-IQ")} لتر</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">إجمالي الوقود المضاف</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold tracking-tight md:text-3xl">{Number(purchaseAgg._sum.quantityLiters ?? 0).toLocaleString("ar-IQ")} لتر</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">إجمالي مبلغ شراء الوقود</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold tracking-tight md:text-3xl">{formatMoney(Number(purchaseAgg._sum.totalCost ?? 0))}</p>
           </CardContent>
         </Card>
       </div>
@@ -114,13 +154,16 @@ export default async function FuelPage() {
             <Card key={`${event.type}-${event.id}`}>
               <CardContent className="flex flex-wrap items-center justify-between gap-2 p-4">
                 <div>
-                  <p className="font-medium">{event.type} — {event.quantity.toLocaleString("ar-IQ")} لتر</p>
+                  <p className="font-medium">
+                    {event.type} — {event.quantity.toLocaleString("ar-IQ")} لتر
+                    {event.auto && <span className="ms-2 text-xs font-normal text-muted-foreground">(تلقائي — جلسة تشغيل)</span>}
+                  </p>
                   <p className="text-xs text-muted-foreground">{formatDate(event.date)}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {event.cost !== null && <span className="font-semibold">{formatMoney(event.cost)}</span>}
                   {canUpdate && event.purchase && <EditFuelPurchaseDialog purchase={event.purchase} canDelete={canDelete} />}
-                  {canUpdate && event.usage && <EditFuelUsageDialog usage={event.usage} canDelete={canDelete} />}
+                  {canUpdate && event.usage && !event.auto && <EditFuelUsageDialog usage={event.usage} canDelete={canDelete} />}
                 </div>
               </CardContent>
             </Card>

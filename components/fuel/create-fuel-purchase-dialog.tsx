@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { formatMoney } from "@/lib/utils/money";
 
 export function CreateFuelPurchaseDialog() {
   const [open, setOpen] = useState(false);
@@ -19,8 +20,13 @@ export function CreateFuelPurchaseDialog() {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<CreateFuelPurchaseInput>({ resolver: zodResolver(createFuelPurchaseSchema), defaultValues: { date: new Date() } });
+
+  const quantityLiters = Number(watch("quantityLiters")) || 0;
+  const pricePerLiter = Number(watch("pricePerLiter")) || 0;
+  const totalCost = Math.round(quantityLiters * pricePerLiter);
 
   async function onSubmit(values: CreateFuelPurchaseInput) {
     setLoading(true);
@@ -55,6 +61,9 @@ export function CreateFuelPurchaseDialog() {
               <Input id="pricePerLiter" type="number" {...register("pricePerLiter")} />
               {errors.pricePerLiter && <p className="text-xs text-destructive">{errors.pricePerLiter.message}</p>}
             </div>
+          </div>
+          <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
+            الإجمالي: <span className="font-semibold">{formatMoney(totalCost)}</span>
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="supplier">المورد (اختياري)</Label>

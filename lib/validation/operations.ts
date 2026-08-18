@@ -62,6 +62,23 @@ export const endOperatingSessionSchema = z.object({
   downtimeReason: z.string().optional(),
 });
 
+export const updateOperatingSessionSchema = z
+  .object({
+    sessionId: z.string().uuid(),
+    startTime: z.coerce.date(),
+    endTime: z.coerce.date(),
+    downtimeMinutes: z.coerce.number().min(0).default(0),
+    downtimeReason: z.string().optional(),
+  })
+  .refine((data) => data.endTime > data.startTime, {
+    message: "وقت الانتهاء يجب أن يكون بعد وقت البدء",
+    path: ["endTime"],
+  });
+
+export const updateFuelConsumptionRateSchema = z.object({
+  fuelConsumptionPerHour: z.coerce.number().positive("المعدل يجب أن يكون أكبر من صفر"),
+});
+
 export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;
 export type CreateFuelPurchaseInput = z.infer<typeof createFuelPurchaseSchema>;
 export type UpdateFuelPurchaseInput = z.infer<typeof updateFuelPurchaseSchema>;
@@ -69,3 +86,5 @@ export type CreateFuelUsageInput = z.infer<typeof createFuelUsageSchema>;
 export type UpdateFuelUsageInput = z.infer<typeof updateFuelUsageSchema>;
 export type CreateMaintenanceInput = z.infer<typeof createMaintenanceSchema>;
 export type DeleteMaintenanceRecordInput = z.infer<typeof deleteMaintenanceRecordSchema>;
+export type UpdateOperatingSessionInput = z.infer<typeof updateOperatingSessionSchema>;
+export type UpdateFuelConsumptionRateInput = z.infer<typeof updateFuelConsumptionRateSchema>;

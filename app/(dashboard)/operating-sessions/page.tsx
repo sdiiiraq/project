@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { PageHelp } from "@/components/help/page-help";
+import { EditOperatingSessionDialog } from "@/components/maintenance/edit-operating-session-dialog";
 import { formatDate, formatTime } from "@/lib/utils/date";
 import { Zap } from "lucide-react";
 
@@ -18,6 +19,7 @@ export default async function OperatingSessionsPage() {
         where: { workspaceId: workspace.id, generatorId: generator.id },
         orderBy: { startTime: "desc" },
         take: 100,
+        include: { fuelUsage: true },
       })
     : [];
 
@@ -50,6 +52,8 @@ export default async function OperatingSessionsPage() {
               <TableHead>وقت الإيقاف</TableHead>
               <TableHead>المدة</TableHead>
               <TableHead>التوقف</TableHead>
+              <TableHead>الوقود المستهلك</TableHead>
+              <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -65,6 +69,12 @@ export default async function OperatingSessionsPage() {
                   {session.downtimeMinutes > 0
                     ? `${session.downtimeMinutes} دقيقة${session.downtimeReason ? ` — ${session.downtimeReason}` : ""}`
                     : "—"}
+                </TableCell>
+                <TableCell>{session.fuelUsage ? `${Number(session.fuelUsage.quantityLiters).toLocaleString("ar-IQ")} لتر` : "—"}</TableCell>
+                <TableCell>
+                  {session.endTime && (
+                    <EditOperatingSessionDialog session={{ id: session.id, startTime: session.startTime, endTime: session.endTime, downtimeMinutes: session.downtimeMinutes, downtimeReason: session.downtimeReason }} />
+                  )}
                 </TableCell>
               </TableRow>
             ))}
