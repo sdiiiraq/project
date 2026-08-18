@@ -1,6 +1,6 @@
 // Service Worker لأمبير — يخزّن غلاف التطبيق الثابت فقط (الأيقونات والـ manifest).
 // لا يُخزَّن أي طلب API أو بيانات مالية مؤقتًا؛ التطبيق يتطلب اتصالًا فعالًا لأي عملية تغيّر بيانات.
-const CACHE_NAME = "ampere-shell-v1";
+const CACHE_NAME = "ampere-shell-v2";
 const SHELL_ASSETS = ["/logo.jpg", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
