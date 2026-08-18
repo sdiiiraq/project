@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
+import { useForm, type UseFormSetError, type FieldValues, type Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   signupEmailSchema,
@@ -9,11 +10,54 @@ import {
   type SignupEmailInput,
   type SignupPhoneInput,
 } from "@/lib/validation/auth";
-import { signUpWithEmail, signUpWithPhone } from "@/lib/actions/auth.actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+
+type SignupErrorBody = {
+  error?: string;
+  code?: string;
+  field?: string;
+  fields?: Record<string, string>;
+  details?: string;
+};
+
+// يرسل الطلب إلى /api/auth/signup ويعيد الخطأ كما هو (برمز حالة حقيقي) بدل ابتلاعه.
+async function submitSignup<T extends FieldValues>(
+  mode: "email" | "phone",
+  values: T,
+  setError: UseFormSetError<T>,
+): Promise<{ redirectTo: string } | { message: string | null }> {
+  let response: Response;
+  try {
+    response = await fetch("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...values, mode }),
+    });
+  } catch {
+    return { message: "تعذّر الاتصال بالخادم. تحقّق من الإنترنت وحاول مرة أخرى." };
+  }
+
+  const body = (await response.json().catch(() => null)) as (SignupErrorBody & { redirectTo?: string }) | null;
+
+  if (response.ok) {
+    return { redirectTo: body?.redirectTo ?? "/onboarding" };
+  }
+
+  // أخطاء الحقول تُعرض تحت الحقل نفسه؛ الباقي في شريط أعلى الزر.
+  const fieldErrors = body?.fields ?? (body?.field && body?.error ? { [body.field]: body.error } : null);
+  const handledFields = Object.entries(fieldErrors ?? {}).filter(([field]) => field in values);
+  for (const [field, message] of handledFields) {
+    setError(field as Path<T>, { type: "server", message });
+  }
+
+  if (handledFields.length > 0) return { message: null };
+
+  const base = body?.error ?? `فشل الطلب (${response.status} ${response.statusText}).`;
+  return { message: body?.code ? `${base} [${body.code}]` : base };
+}
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
@@ -21,20 +65,27 @@ function FieldError({ message }: { message?: string }) {
 }
 
 function EmailSignupForm() {
+  const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<SignupEmailInput>({ resolver: zodResolver(signupEmailSchema) });
 
   async function onSubmit(values: SignupEmailInput) {
     setServerError(null);
     setLoading(true);
-    const result = await signUpWithEmail(values);
+    const result = await submitSignup("email", values, setError);
+    if ("redirectTo" in result) {
+      router.replace(result.redirectTo);
+      router.refresh();
+      return;
+    }
     setLoading(false);
-    if (result && "error" in result) setServerError(result.error);
+    setServerError(result.message);
   }
 
   return (
@@ -75,20 +126,27 @@ function EmailSignupForm() {
 }
 
 function PhoneSignupForm() {
+  const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<SignupPhoneInput>({ resolver: zodResolver(signupPhoneSchema) });
 
   async function onSubmit(values: SignupPhoneInput) {
     setServerError(null);
     setLoading(true);
-    const result = await signUpWithPhone(values);
+    const result = await submitSignup("phone", values, setError);
+    if ("redirectTo" in result) {
+      router.replace(result.redirectTo);
+      router.refresh();
+      return;
+    }
     setLoading(false);
-    if (result && "error" in result) setServerError(result.error);
+    setServerError(result.message);
   }
 
   return (
