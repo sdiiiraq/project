@@ -2,7 +2,7 @@ import "server-only";
 
 import type { AuthError } from "@supabase/supabase-js";
 import type { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
 import { normalizeIraqiPhone } from "@/lib/utils/phone";
 import { signupEmailSchema, signupPhoneSchema } from "@/lib/validation/auth";
@@ -112,15 +112,6 @@ export function mapSupabaseAuthError(error: AuthError): SignupFailure {
     });
   }
 
-  if (code === "sms_send_failed" || message.includes("sms")) {
-    return fail(502, {
-      error: "تعذّر إرسال رمز التحقق عبر SMS. جرّب التسجيل بالبريد الإلكتروني.",
-      code: "sms_send_failed",
-      field: "phone",
-      details,
-    });
-  }
-
   // لا نُخفي السبب الحقيقي — نعرضه مع رمز HTTP صحيح.
   const status = error.status && error.status >= 400 && error.status < 500 ? 400 : 502;
   return fail(status, {
@@ -130,10 +121,10 @@ export function mapSupabaseAuthError(error: AuthError): SignupFailure {
   });
 }
 
-function missingSupabaseEnv(): string[] {
-  return (["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"] as const).filter(
-    (key) => !process.env[key],
-  );
+function missingSupabaseEnv(options?: { serviceRole?: boolean }): string[] {
+  const keys = ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"];
+  if (options?.serviceRole) keys.push("SUPABASE_SERVICE_ROLE_KEY");
+  return keys.filter((key) => !process.env[key]);
 }
 
 function envFailure(missing: string[]): SignupFailure {
@@ -257,24 +248,28 @@ export async function signupWithEmail(input: unknown): Promise<SignupResult> {
   return provision({ userId: data.user.id, fullName, email, phone: null, generatorName });
 }
 
+// التسجيل بالهاتف = رقم + كلمة مرور فقط. لا رمز تحقق ولا SMS: نُنشئ المستخدم عبر Admin API
+// مع phone_confirm حتى لا يحاول Supabase إرسال OTP، ثم نفتح الجلسة بكلمة المرور مباشرة.
 export async function signupWithPhone(input: unknown): Promise<SignupResult> {
   const parsed = signupPhoneSchema.safeParse(input);
   if (!parsed.success) return zodFailure(parsed.error);
 
-  const missing = missingSupabaseEnv();
+  const missing = missingSupabaseEnv({ serviceRole: true });
   if (missing.length > 0) return envFailure(missing);
 
   const { fullName, phone, password, generatorName } = parsed.data;
   const normalizedPhone = normalizeIraqiPhone(phone);
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({
+
+  const admin = createAdminClient();
+  const { data, error } = await admin.auth.admin.createUser({
     phone: normalizedPhone,
     password,
-    options: { data: { full_name: fullName } },
+    phone_confirm: true,
+    user_metadata: { full_name: fullName },
   });
 
   if (error) {
-    console.error("[signup] supabase signUp (phone) failed", {
+    console.error("[signup] supabase admin createUser (phone) failed", {
       code: error.code,
       status: error.status,
       message: error.message,
@@ -282,7 +277,21 @@ export async function signupWithPhone(input: unknown): Promise<SignupResult> {
     return mapSupabaseAuthError(error);
   }
   if (!data.user) return noUserFailure();
-  if (isObfuscatedExistingUser(data.user)) return alreadyRegisteredFailure("phone");
+
+  const supabase = await createClient();
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    phone: normalizedPhone,
+    password,
+  });
+
+  if (signInError) {
+    console.error("[signup] sign-in after phone signup failed", {
+      code: signInError.code,
+      status: signInError.status,
+      message: signInError.message,
+    });
+    return mapSupabaseAuthError(signInError);
+  }
 
   return provision({ userId: data.user.id, fullName, email: null, phone: normalizedPhone, generatorName });
 }

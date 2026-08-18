@@ -12,12 +12,18 @@ export async function signInWithPassword(input: unknown): Promise<ActionResult> 
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" };
   const { identifier, password } = parsed.data;
 
+  // الدخول بالهاتف أو البريد + كلمة المرور فقط — بلا رمز تحقق أو SMS.
   const supabase = await createClient();
   const { error } = isEmail(identifier)
     ? await supabase.auth.signInWithPassword({ email: identifier, password })
     : await supabase.auth.signInWithPassword({ phone: normalizeIraqiPhone(identifier), password });
 
-  if (error) return { error: "البريد/الهاتف أو كلمة المرور غير صحيحة." };
+  if (error) {
+    if (error.code === "phone_not_confirmed" || error.code === "email_not_confirmed") {
+      return { error: "هذا الحساب غير مُفعّل. راجع الدعم الفني لتفعيله." };
+    }
+    return { error: "البريد/الهاتف أو كلمة المرور غير صحيحة." };
+  }
 
   redirect("/dashboard");
 }
