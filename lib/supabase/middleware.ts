@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/signup", "/forgot-password", "/reset-password", "/auth"];
+const PUBLIC_PATHS = ["/login", "/signup", "/forgot-password", "/reset-password", "/auth", "/api/auth"];
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
@@ -43,7 +43,8 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (user && isPublicPath(pathname) && !pathname.startsWith("/auth")) {
+  // مسارات الـ API لا تُحوَّل أبدًا — يجب أن تُعيد JSON برمز حالة صحيح.
+  if (user && isPublicPath(pathname) && !pathname.startsWith("/auth") && !pathname.startsWith("/api")) {
     return NextResponse.redirect(new URL(isAdminArea ? "/admin" : "/dashboard", request.url));
   }
 
