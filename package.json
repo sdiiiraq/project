@@ -22,6 +22,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
+    "db:verify": "node scripts/verify-migration.mjs",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:platform": "tsx prisma/seed-platform.ts",
     "db:studio": "prisma studio",
