@@ -14,6 +14,9 @@ const FEATURES = [
   { key: "FEATURE_ADVANCED_REPORTS", name: "التقارير المتقدمة" },
 ];
 
+// aiRequestLimit: حد طلبات المساعد الذكي لكل شهر. null = بلا حد.
+// Starter/Business لا تملك FEATURE_AI أصلًا، فالحد فيها غير مؤثر ما دامت الميزة مطفأة.
+// ⚠️ قيمة Pro أدناه مبدئية وتحتاج قرارًا تجاريًا منك.
 const PLANS = [
   {
     slug: "starter",
@@ -21,6 +24,7 @@ const PLANS = [
     price: 25000,
     customerLimit: 100,
     userLimit: 3,
+    aiRequestLimit: null,
     features: ["FEATURE_FUEL", "FEATURE_MAINTENANCE", "FEATURE_EXPORT", "FEATURE_NOTIFICATIONS"],
   },
   {
@@ -29,6 +33,7 @@ const PLANS = [
     price: 50000,
     customerLimit: 500,
     userLimit: 10,
+    aiRequestLimit: null,
     features: [
       "FEATURE_FUEL", "FEATURE_MAINTENANCE", "FEATURE_EXPORT",
       "FEATURE_PDF_REPORTS", "FEATURE_NOTIFICATIONS", "FEATURE_ADVANCED_REPORTS",
@@ -40,6 +45,7 @@ const PLANS = [
     price: 90000,
     customerLimit: null,
     userLimit: null,
+    aiRequestLimit: 2000,
     features: FEATURES.map((f) => f.key),
   },
 ];
@@ -52,13 +58,20 @@ async function main() {
   for (const plan of PLANS) {
     const created = await db.platformPlan.upsert({
       where: { slug: plan.slug },
-      update: { name: plan.name, price: plan.price, customerLimit: plan.customerLimit, userLimit: plan.userLimit },
+      update: {
+        name: plan.name,
+        price: plan.price,
+        customerLimit: plan.customerLimit,
+        userLimit: plan.userLimit,
+        aiRequestLimit: plan.aiRequestLimit,
+      },
       create: {
         slug: plan.slug,
         name: plan.name,
         price: plan.price,
         customerLimit: plan.customerLimit,
         userLimit: plan.userLimit,
+        aiRequestLimit: plan.aiRequestLimit,
       },
     });
 

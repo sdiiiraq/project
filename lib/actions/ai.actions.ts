@@ -5,7 +5,9 @@ import { db } from "@/lib/db";
 import { requireWorkspace } from "@/lib/auth/session";
 import { canUseFeature } from "@/lib/rbac/features";
 import { getAIContext } from "@/lib/domain/ai-context";
-import { askAssistant, AINotConfiguredError } from "@/lib/ai/client";
+import { askAssistant, AINotConfiguredError, AIRequestError } from "@/lib/ai/client";
+import { reserveAiRequest, releaseAiQuota } from "@/lib/domain/ai-usage";
+import { log } from "@/lib/observability/logger";
 
 export type AskAIResult = { error: string } | { success: true; conversationId: string; answer: string };
 
@@ -19,6 +21,20 @@ export async function askAI(input: { conversationId?: string; question: string }
   if (!featureEnabled) {
     return { error: "المساعد الذكي غير مُفعّل ضمن باقتك الحالية." };
   }
+
+  // بوابة الحماية: rate limit لكل workspace + حجز ذرّي من الحصة الشهرية للخطة.
+  // تسبق أي كتابة أو أي استدعاء لـ Anthropic — الطلب المرفوض لا يصل إلى المزوّد إطلاقًا.
+  //
+  // تعذّر التحقق من الحد ⇒ نرفض (fail-closed) ولا نمرّر الطلب: تجاوز حدود الباقة أسوأ
+  // من رفض مؤقت. لكن الرفض يخرج كرسالة عربية واضحة، لا كاستثناء يُسقط الصفحة.
+  let quota;
+  try {
+    quota = await reserveAiRequest(workspace.id);
+  } catch (error) {
+    log.error("ai.quota_check_failed", { workspaceId: workspace.id, error });
+    return { error: "تعذر التحقق من حدود الاستخدام حاليًا. حاول بعد قليل." };
+  }
+  if (!quota.allowed) return { error: quota.message };
 
   let conversation = input.conversationId
     ? await db.aIConversation.findFirst({ where: { id: input.conversationId, workspaceId: workspace.id, userId: user.id } })
@@ -47,10 +63,18 @@ export async function askAI(input: { conversationId?: string; question: string }
       question,
     );
   } catch (error) {
+    // الطلب لم ينجح ⇒ نُرجع الحجز حتى لا يُحتسب على حصة المشترك.
+    await releaseAiQuota(workspace.id);
+
     if (error instanceof AINotConfiguredError) {
       return { error: "المساعد الذكي غير مُهيَّأ بعد على هذا الخادم." };
     }
-    console.error("AI assistant error:", error);
+    // خطأ مصنَّف من طبقة المزوّد ⇒ رسالة عربية دقيقة (مهلة/ضغط/تعذر وصول) بدل رسالة عامة.
+    if (error instanceof AIRequestError) {
+      log.warn("ai.action_failed", { workspaceId: workspace.id, reason: error.reason });
+      return { error: error.message };
+    }
+    log.error("ai.action_failed", { workspaceId: workspace.id, error });
     return { error: "تعذر تنفيذ العملية. حاول مرة أخرى." };
   }
 

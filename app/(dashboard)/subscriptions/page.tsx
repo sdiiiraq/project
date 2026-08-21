@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageHelp } from "@/components/help/page-help";
+import { Pagination } from "@/components/shared/pagination";
 import { formatMoney } from "@/lib/utils/money";
 import { FileText } from "lucide-react";
 import type { SubscriptionStatus } from "@prisma/client";
@@ -18,22 +19,45 @@ const STATUS_LABELS: Record<SubscriptionStatus, string> = {
   EXPIRED: "منتهي",
 };
 
-export default async function SubscriptionsPage() {
+const PAGE_SIZE = 20;
+
+export default async function SubscriptionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { page: pageParam } = await searchParams;
   const { workspace, permissions } = await requireWorkspace();
   requirePermission(permissions, "subscriptions.read");
 
-  const subscriptions = await db.customerSubscription.findMany({
-    where: { customer: { workspaceId: workspace.id, deletedAt: null } },
-    include: { customer: true, amperePlan: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const page = Math.max(1, Number(pageParam) || 1);
+
+  // كانت الصفحة تُحمّل كل اشتراكات المولدة دفعة واحدة مع join مزدوج وبلا أي حد.
+  const where = { customer: { workspaceId: workspace.id, deletedAt: null } };
+  const [total, subscriptions] = await Promise.all([
+    db.customerSubscription.count({ where }),
+    db.customerSubscription.findMany({
+      where,
+      select: {
+        id: true,
+        customerId: true,
+        amperes: true,
+        price: true,
+        status: true,
+        customer: { select: { name: true } },
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl">الاشتراكات</h1>
-          <p className="text-sm text-muted-foreground">{subscriptions.length} اشتراك</p>
+          <p className="text-sm text-muted-foreground">{total} اشتراك</p>
         </div>
         <PageHelp pageKey="subscriptions" />
       </div>
@@ -66,6 +90,8 @@ export default async function SubscriptionsPage() {
           ))}
         </div>
       )}
+
+      <Pagination page={page} pageSize={PAGE_SIZE} total={total} basePath="/subscriptions" searchParams={{}} />
     </div>
   );
 }

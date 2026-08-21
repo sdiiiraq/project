@@ -5,15 +5,19 @@ import { monthRange } from "./billing";
 async function getMonthSnapshot(workspaceId: string, year: number, month: number) {
   const { periodStart, periodEnd } = monthRange(year, month);
 
-  const [invoices, expenses, fuelPurchases, customerCount] = await Promise.all([
-    db.invoice.findMany({ where: { workspaceId, periodStart: { gte: periodStart, lte: periodEnd } } }),
+  const [invoiceAgg, expenses, fuelPurchases, customerCount] = await Promise.all([
+    // كان findMany ثم reduce — الآن التجميع في قاعدة البيانات ولا تُقرأ أي صفوف.
+    db.invoice.aggregate({
+      where: { workspaceId, periodStart: { gte: periodStart, lte: periodEnd } },
+      _sum: { amount: true, paidAmount: true },
+    }),
     db.expense.aggregate({ where: { workspaceId, date: { gte: periodStart, lte: periodEnd } }, _sum: { amount: true } }),
     db.fuelPurchase.aggregate({ where: { workspaceId, date: { gte: periodStart, lte: periodEnd } }, _sum: { totalCost: true, quantityLiters: true } }),
     db.customer.count({ where: { workspaceId, deletedAt: null, createdAt: { lte: periodEnd } } }),
   ]);
 
-  const due = invoices.reduce((s, i) => s + Number(i.amount), 0);
-  const collected = invoices.reduce((s, i) => s + Number(i.paidAmount), 0);
+  const due = Number(invoiceAgg._sum.amount ?? 0);
+  const collected = Number(invoiceAgg._sum.paidAmount ?? 0);
   const expensesTotal = Number(expenses._sum.amount ?? 0);
 
   return {
@@ -41,7 +45,7 @@ export async function getAIContext(workspaceId: string) {
     db.customer.findMany({
       where: { workspaceId, deletedAt: null, status: "OVERDUE" },
       take: 10,
-      include: { invoices: { where: { status: { not: "PAID" } } } },
+      select: { id: true, name: true },
     }),
     db.customer.count({ where: { workspaceId, deletedAt: null, status: "OVERDUE" } }),
     db.fuelPurchase.aggregate({ where: { workspaceId }, _sum: { quantityLiters: true } }),
@@ -50,11 +54,21 @@ export async function getAIContext(workspaceId: string) {
   const fuelUsedAgg = await db.fuelUsage.aggregate({ where: { workspaceId }, _sum: { quantityLiters: true } });
   const currentStockLiters = Number(fuelStock._sum.quantityLiters ?? 0) - Number(fuelUsedAgg._sum.quantityLiters ?? 0);
 
+  // المستحق لكل مشترك يُجمَّع في قاعدة البيانات بدل جلب كل فواتيره غير المدفوعة.
+  const outstandingByCustomer = await db.invoice.groupBy({
+    by: ["customerId"],
+    where: { customerId: { in: overdueCustomers.map((c) => c.id) }, status: { not: "PAID" } },
+    _sum: { amount: true, paidAmount: true },
+  });
+  const outstandingMap = new Map(
+    outstandingByCustomer.map((row) => [
+      row.customerId,
+      Number(row._sum.amount ?? 0) - Number(row._sum.paidAmount ?? 0),
+    ]),
+  );
+
   const topOverdueCustomers = overdueCustomers
-    .map((c) => ({
-      name: c.name,
-      outstandingIQD: c.invoices.reduce((s, i) => s + Number(i.amount) - Number(i.paidAmount), 0),
-    }))
+    .map((c) => ({ name: c.name, outstandingIQD: outstandingMap.get(c.id) ?? 0 }))
     .sort((a, b) => b.outstandingIQD - a.outstandingIQD)
     .slice(0, 5);
 

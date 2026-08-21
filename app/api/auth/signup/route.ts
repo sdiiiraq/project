@@ -1,11 +1,31 @@
 import { NextResponse } from "next/server";
 import { signupWithEmail, signupWithPhone } from "@/lib/auth/signup";
+import { consumeRateLimit, clientIdentifier } from "@/lib/domain/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// حد إنشاء الحسابات لكل عنوان خلال نافذة — المسار عام تمامًا (خارج middleware auth)،
+// فبدونه يمكن لأي شخص استهلاك حصة Supabase وإغراق جدول المستخدمين.
+const SIGNUP_LIMIT = 5;
+const SIGNUP_WINDOW_SECONDS = 600;
+
 // POST /api/auth/signup — يعيد 201 عند النجاح، و 4xx/5xx مع رسالة واضحة عند الفشل.
 export async function POST(request: Request) {
+  const { allowed, retryAfterSeconds } = await consumeRateLimit({
+    scope: "signup",
+    identifier: clientIdentifier(request),
+    limit: SIGNUP_LIMIT,
+    windowSeconds: SIGNUP_WINDOW_SECONDS,
+  });
+
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "محاولات إنشاء حساب كثيرة. انتظر قليلًا ثم حاول مجددًا.", code: "rate_limited" },
+      { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } },
+    );
+  }
+
   let payload: unknown;
   try {
     payload = await request.json();
@@ -34,7 +54,6 @@ export async function POST(request: Request) {
       {
         error: "خطأ غير متوقع في الخادم أثناء إنشاء الحساب.",
         code: "internal_error",
-        details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 },
     );

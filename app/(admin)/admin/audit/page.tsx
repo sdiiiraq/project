@@ -2,20 +2,46 @@ import { db } from "@/lib/db";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { formatDateTime } from "@/lib/utils/date";
+import { Pagination } from "@/components/shared/pagination";
+import { estimatedRowCount } from "@/lib/domain/table-stats";
 import { ScrollText } from "lucide-react";
 
-export default async function AdminAuditPage() {
-  const logs = await db.auditLog.findMany({
-    include: { actor: true, workspace: true },
-    orderBy: { createdAt: "desc" },
-    take: 100,
-  });
+const PAGE_SIZE = 50;
+
+// سجل التدقيق مرشّح ليكون أكبر جدول في المنصّة — يُقرأ مُصفَّحًا دائمًا،
+// وبأعمدة محددة بدل include كامل للمستخدم والمولدة.
+export default async function AdminAuditPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { page: pageParam } = await searchParams;
+  const page = Math.max(1, Number(pageParam) || 1);
+
+  // عدد تقريبي عمدًا: COUNT(*) بلا شرط على سجل التدقيق يعني فحصًا كاملًا للجدول
+  // في كل تحميل صفحة — وهو الجدول الأسرع نموًا في المنصّة.
+  const [total, logs] = await Promise.all([
+    estimatedRowCount("auditLogs"),
+    db.auditLog.findMany({
+      select: {
+        id: true,
+        createdAt: true,
+        action: true,
+        entity: true,
+        actor: { select: { fullName: true } },
+        workspace: { select: { name: true } },
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">سجل التدقيق</h1>
-        <p className="text-sm text-muted-foreground">آخر 100 عملية عبر جميع المولدات</p>
+        <p className="text-sm text-muted-foreground">نحو {total.toLocaleString("ar-IQ")} عملية عبر جميع المولدات</p>
       </div>
 
       {logs.length === 0 ? (
@@ -49,6 +75,8 @@ export default async function AdminAuditPage() {
           </TableBody>
         </Table>
       )}
+
+      <Pagination page={page} pageSize={PAGE_SIZE} total={total} basePath="/admin/audit" searchParams={{}} />
     </div>
   );
 }

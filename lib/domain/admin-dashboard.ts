@@ -20,7 +20,7 @@ export async function getAdminDashboardStats() {
     trialSubscriptions,
     activeSubscriptions,
     expiredSubscriptions,
-    activeMonthlySubs,
+    monthlySubsAgg,
     totalRevenue,
   ] = await Promise.all([
     db.workspace.count(),
@@ -29,11 +29,11 @@ export async function getAdminDashboardStats() {
     db.platformSubscription.count({ where: { status: "TRIAL" } }),
     db.platformSubscription.count({ where: { status: "ACTIVE" } }),
     db.platformSubscription.count({ where: { status: "EXPIRED" } }),
-    db.platformSubscription.findMany({ where: { status: "ACTIVE", plan: { billingCycle: "MONTHLY" } }, select: { price: true } }),
+    db.platformSubscription.aggregate({ where: { status: "ACTIVE", plan: { billingCycle: "MONTHLY" } }, _sum: { price: true } }),
     db.billingTransaction.aggregate({ where: { type: "CHARGE" }, _sum: { amount: true } }),
   ]);
 
-  const mrr = activeMonthlySubs.reduce((sum, s) => sum + Number(s.price), 0);
+  const mrr = Number(monthlySubsAgg._sum.price ?? 0);
   const arr = mrr * 12;
 
   const months = lastNMonths(6);

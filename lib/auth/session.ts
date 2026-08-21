@@ -23,47 +23,55 @@ export async function requireAuthUser() {
 }
 
 // أول Workspace ينتمي إليه المستخدم — الإصدار الحالي يدعم Workspace واحد لكل مستخدم.
+// الصلاحيات تُجلب ضمن نفس الاستعلام بدل استعلام ثانٍ تابع له.
 export async function getCurrentMembership(userId: string) {
   return db.workspaceMember.findFirst({
     where: { userId },
-    include: { workspace: true },
+    include: { workspace: true, permissions: { select: { permissionKey: true } } },
     orderBy: { createdAt: "asc" },
   });
 }
 
 // المالك يملك كل الصلاحيات دائمًا. الموظف صلاحياته محصورة بما مُنح له فعليًا (WorkspaceMemberPermission)
 // — لا افتراضات، ولا يمكن لموظف تصعيد صلاحياته بنفسه لأن هذه المجموعة تُحسب من قاعدة البيانات فقط.
-async function computePermissions(role: MemberRole, memberId: string | null): Promise<Set<PermissionKey>> {
+// الدالة صارت متزامنة: المصدر لم يتغيّر (نفس صفوف قاعدة البيانات)، تغيّر توقيت جلبه فقط.
+function computePermissions(role: MemberRole, grants: { permissionKey: string }[]): Set<PermissionKey> {
   if (role === "OWNER") return ALL_PERMISSIONS;
-  if (!memberId) return new Set();
-  const grants = await db.workspaceMemberPermission.findMany({ where: { memberId }, select: { permissionKey: true } });
   return new Set(grants.map((g) => g.permissionKey as PermissionKey));
 }
 
 export async function requireWorkspace() {
   const user = await requireAuthUser();
 
+  // الاستعلامات الثلاثة مستقلة عن بعضها، فتُنفَّذ معًا بدل التتابع.
+  // ملاحظة: الفائدة الفعلية مرهونة برفع connection_limit — عند القيمة 1 تتناوب
+  // هذه الاستعلامات على اتصال واحد ولا يتحقق أي توازٍ حقيقي.
+  //
+  // getActiveImpersonation آمنة للاستدعاء لأي مستخدم: استعلامها مُقيَّد بـ adminUserId،
+  // فكوكي مزوَّر من غير مشرف لا يطابق أي سجل. ومع ذلك لا تُستخدَم نتيجتها إطلاقًا
+  // إلا بعد التأكد من صفة المشرف أدناه — التحقق من الصلاحية لم يضعف.
+  const [admin, impersonation, membership] = await Promise.all([
+    db.platformAdmin.findUnique({ where: { userId: user.id } }),
+    getActiveImpersonation(user.id),
+    getCurrentMembership(user.id),
+  ]);
+
   // Admin Impersonation Context: مشرف المنصة يعرض بيانات مولدة أخرى دون تسجيل دخول حقيقي كصاحبها.
-  const admin = await db.platformAdmin.findUnique({ where: { userId: user.id } });
-  if (admin) {
-    const impersonation = await getActiveImpersonation(user.id);
-    if (impersonation) {
-      return {
-        user,
-        membership: null,
-        workspace: impersonation.workspace,
-        role: "OWNER" as MemberRole,
-        permissions: ALL_PERMISSIONS,
-        impersonating: true,
-      };
-    }
+  if (admin && impersonation) {
+    return {
+      user,
+      membership: null,
+      workspace: impersonation.workspace,
+      role: "OWNER" as MemberRole,
+      permissions: ALL_PERMISSIONS,
+      impersonating: true,
+    };
   }
 
-  const membership = await getCurrentMembership(user.id);
   if (!membership) redirect("/onboarding");
   if (membership.workspace.status !== "ACTIVE") redirect("/suspended");
   const role = membership.role as MemberRole;
-  const permissions = await computePermissions(role, membership.id);
+  const permissions = computePermissions(role, membership.permissions);
   return { user, membership, workspace: membership.workspace, role, permissions, impersonating: false };
 }
 

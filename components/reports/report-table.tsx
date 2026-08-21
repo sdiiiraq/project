@@ -10,40 +10,20 @@ const MONEY_KEYS = new Set(["amount", "paid", "outstanding", "totalCost", "price
 export function ReportTable({
   columns,
   rows,
-  fileName,
+  exportHref,
 }: {
   columns: { key: string; label: string }[];
   rows: Record<string, string | number>[];
-  fileName: string;
+  /** مسار التصدير من الخادم — يُصدّر التقرير كاملًا وليس الصفحة المعروضة فقط. */
+  exportHref: string;
 }) {
-  function exportCsv() {
-    const header = columns.map((c) => c.label).join(",");
-    const body = rows
-      .map((row) =>
-        columns
-          .map((c) => {
-            const cell = row[c.key];
-            const value = MONEY_KEYS.has(c.key) && typeof cell === "number" ? Math.round(cell) : (cell ?? "");
-            return `"${String(value).replace(/"/g, '""')}"`;
-          })
-          .join(","),
-      )
-      .join("\n");
-    const csv = `﻿${header}\n${body}`;
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${fileName}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-  }
-
   return (
     <div className="flex flex-col gap-3">
       <div className="flex justify-end gap-2 print:hidden">
-        <Button variant="outline" size="sm" onClick={exportCsv} disabled={rows.length === 0}>
-          <Download className="h-4 w-4" /> تصدير CSV
+        <Button asChild variant="outline" size="sm">
+          <a href={exportHref}>
+            <Download className="h-4 w-4" /> تصدير CSV
+          </a>
         </Button>
         <Button variant="outline" size="sm" onClick={() => window.print()} disabled={rows.length === 0}>
           <Printer className="h-4 w-4" /> طباعة

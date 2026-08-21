@@ -5,6 +5,30 @@ import { notifyWorkspace } from "@/lib/domain/notifications";
 
 type Tx = Prisma.TransactionClient | PrismaClient;
 
+/** يُرمى عندما يشير معرّف سجل إلى مولدة أخرى — لا يجب أن يحدث عبر الواجهة إطلاقًا. */
+export class CrossTenantAccessError extends Error {
+  constructor(entity: string) {
+    super(`${entity} غير موجود.`);
+    this.name = "CrossTenantAccessError";
+  }
+}
+
+/**
+ * تأكيد أن المشترك يعود فعلًا لهذه المولدة.
+ *
+ * دوال هذه الطبقة تستقبل workspaceId أصلًا لكنها كانت تستخدمه للسجل فقط، وتعتمد على
+ * أن المُستدعي تحقق من الملكية. المُستدعون الحاليون يتحققون فعلًا، لكن الاعتماد على ذلك
+ * يعني أن أي مسار جديد ينسى الفحص يفتح كتابة عابرة للمستأجرين. الفحص هنا يجعل الطبقة
+ * آمنة بذاتها (defense in depth) بتكلفة استعلام واحد مفهرس.
+ */
+async function assertCustomerInWorkspace(tx: Tx, customerId: string, workspaceId: string): Promise<void> {
+  const customer = await tx.customer.findFirst({
+    where: { id: customerId, workspaceId },
+    select: { id: true },
+  });
+  if (!customer) throw new CrossTenantAccessError("المشترك");
+}
+
 export function monthRange(year: number, month: number) {
   // month: 1-12. نستخدم UTC لتفادي انزياح التاريخ حسب منطقة الخادم.
   const periodStart = new Date(Date.UTC(year, month - 1, 1));
@@ -12,9 +36,26 @@ export function monthRange(year: number, month: number) {
   return { periodStart, periodEnd };
 }
 
+/**
+ * حجز رقم المشترك التالي بشكل ذرّي.
+ *
+ * كان: COUNT(*) + 1 — قراءة ثم كتابة، أي أن موظفَين يضيفان مشتركًا في نفس اللحظة
+ * يحصلان على نفس الرقم ويفشل أحدهما بـ P2002.
+ * صار: UPDATE ... SET seq = seq + 1 RETURNING — القراءة والزيادة عملية واحدة على مستوى
+ * PostgreSQL، والصف مقفول للمدة الأدنى الممكنة. لا يمكن لطلبين الحصول على نفس الرقم.
+ */
 export async function nextSubscriberNumber(tx: Tx, workspaceId: string): Promise<string> {
-  const count = await tx.customer.count({ where: { workspaceId } });
-  return String(count + 1).padStart(4, "0");
+  const rows = await tx.$queryRaw<{ subscriberSequence: number }[]>`
+    UPDATE workspaces
+    SET "subscriberSequence" = "subscriberSequence" + 1
+    WHERE id = ${workspaceId}::uuid
+    RETURNING "subscriberSequence";
+  `;
+
+  const next = rows[0]?.subscriberSequence;
+  if (next === undefined) throw new Error("المولدة غير موجودة.");
+
+  return String(next).padStart(4, "0");
 }
 
 // يُنشئ (أو يُحدّث) سجل AmperePlan "ظليّ" مخصص لعدد الأمبيرات المُدخل يدويًا ونوع الاشتراك (عادي/ذهبي)،
@@ -51,10 +92,15 @@ export async function createCustomerWithSubscription(params: {
   tier: SubscriptionTier;
   customerType: "RESIDENTIAL" | "COMMERCIAL" | "NORMAL";
 }) {
+  // الرقم يُحجز خارج المعاملة الرئيسية عمدًا: UPDATE واحد قصير يُحرِّر قفل صف المولدة فورًا
+  // بدل حجزه طوال المعاملة (ست عمليات متتالية). لولا ذلك لتسلسلت كل الإضافات المتزامنة لنفس
+  // المولدة خلف بعضها وتجاوزت مهلة المعاملة تحت الحمل.
+  // المقابل: إذا فشلت المعاملة بعد الحجز يبقى فراغ في الترقيم — مقبول، والأهم ألا يتكرر رقم.
+  const subscriberNumber = await nextSubscriberNumber(db, params.workspaceId);
+
   return db.$transaction(async (tx) => {
     const plan = await resolveAmperePlanByAmperes(tx, params.workspaceId, params.amperes, params.tier);
 
-    const subscriberNumber = await nextSubscriberNumber(tx, params.workspaceId);
     const now = new Date();
 
     const customer = await tx.customer.create({
@@ -126,10 +172,12 @@ export async function changeCustomerAmpere(params: {
   reason?: string;
 }) {
   return db.$transaction(async (tx) => {
+    await assertCustomerInWorkspace(tx, params.customerId, params.workspaceId);
+
     const plan = await resolveAmperePlanByAmperes(tx, params.workspaceId, params.amperes, params.tier);
 
     const subscription = await tx.customerSubscription.findFirstOrThrow({
-      where: { customerId: params.customerId, status: "ACTIVE" },
+      where: { customerId: params.customerId, status: "ACTIVE", customer: { workspaceId: params.workspaceId } },
     });
 
     const now = new Date();
@@ -168,42 +216,62 @@ export async function changeCustomerAmpere(params: {
   });
 }
 
+// حجم الدفعة الواحدة: عدد الاشتراكات التي تُقرأ وتُدرَج فواتيرها في جولة واحدة.
+// يبقي استهلاك الذاكرة ثابتًا مهما بلغ عدد مشتركي الـ workspace.
+const INVOICE_BATCH_SIZE = 500;
+
 // Idempotent: لن يُنشئ فاتورة مكررة لنفس المشترك ونفس فترة الفوترة بفضل Unique Constraint في قاعدة البيانات.
+// التنفيذ يقرأ الاشتراكات على دفعات بـ cursor pagination ويُدرج الفواتير بـ createMany —
+// لا يُحمّل كل اشتراكات الـ workspace في الذاكرة، ولا يُنفّذ INSERT منفصلًا لكل مشترك.
 export async function generateMonthlyInvoices(workspaceId: string, year: number, month: number) {
   const { periodStart, periodEnd } = monthRange(year, month);
 
-  const subscriptions = await db.customerSubscription.findMany({
-    where: { status: "ACTIVE", customer: { workspaceId, deletedAt: null } },
-    include: { customer: true },
-  });
-
   let created = 0;
-  let skipped = 0;
+  let total = 0;
+  let cursor: string | undefined;
 
-  for (const subscription of subscriptions) {
-    try {
-      await db.invoice.create({
-        data: {
-          workspaceId,
-          customerId: subscription.customerId,
-          subscriptionId: subscription.id,
-          periodStart,
-          periodEnd,
-          amount: subscription.price,
-          status: "UNPAID",
-        },
+  for (;;) {
+    const subscriptions = await db.customerSubscription.findMany({
+      where: { status: "ACTIVE", customer: { workspaceId, deletedAt: null } },
+      select: { id: true, customerId: true, price: true },
+      orderBy: { id: "asc" },
+      take: INVOICE_BATCH_SIZE,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    });
+
+    if (subscriptions.length === 0) break;
+
+    total += subscriptions.length;
+    cursor = subscriptions[subscriptions.length - 1]!.id;
+
+    // مشترك واحد قد يملك أكثر من اشتراك نشط، والقيد الفريد يسمح بفاتورة واحدة له لكل فترة —
+    // نُزيل التكرار داخل الدفعة قبل الإدراج حتى لا يعتمد الناتج على ترتيب حلّ التعارض في قاعدة البيانات.
+    const seenCustomers = new Set<string>();
+    const rows: Prisma.InvoiceCreateManyInput[] = [];
+    for (const subscription of subscriptions) {
+      if (seenCustomers.has(subscription.customerId)) continue;
+      seenCustomers.add(subscription.customerId);
+      rows.push({
+        workspaceId,
+        customerId: subscription.customerId,
+        subscriptionId: subscription.id,
+        periodStart,
+        periodEnd,
+        amount: subscription.price,
+        status: "UNPAID",
       });
-      created += 1;
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-        skipped += 1;
-        continue;
-      }
-      throw error;
     }
+
+    if (rows.length > 0) {
+      // skipDuplicates يترجم إلى ON CONFLICT DO NOTHING — إعادة تشغيل الدورة لا تُنتج فواتير مكررة.
+      const result = await db.invoice.createMany({ data: rows, skipDuplicates: true });
+      created += result.count;
+    }
+
+    if (subscriptions.length < INVOICE_BATCH_SIZE) break;
   }
 
-  return { created, skipped, total: subscriptions.length };
+  return { created, skipped: total - created, total };
 }
 
 function invoiceStatusFor(amount: number, paidAmount: number): "PAID" | "PARTIALLY_PAID" | "UNPAID" {
@@ -225,11 +293,17 @@ export async function applyPayment(params: {
   return db.$transaction(async (tx) => {
     // قفل تشاؤمي (FOR UPDATE) على فواتير المشترك المفتوحة — يمنع Race Condition عند دفعتين متزامنتين
     // لنفس المشترك (Double Click / Retry / طلبين حقيقيين بنفس اللحظة) من تجاوز المبلغ المستحق فعليًا.
-    await tx.$queryRaw`SELECT id FROM invoices WHERE "customerId" = ${params.customerId}::uuid AND status IN ('UNPAID', 'PARTIALLY_PAID', 'OVERDUE') FOR UPDATE`;
+    await assertCustomerInWorkspace(tx, params.customerId, params.workspaceId);
+
+    await tx.$queryRaw`SELECT id FROM invoices WHERE "customerId" = ${params.customerId}::uuid AND "workspaceId" = ${params.workspaceId}::uuid AND status IN ('UNPAID', 'PARTIALLY_PAID', 'OVERDUE') FOR UPDATE`;
 
     let remaining = params.amount;
     const openInvoices = await tx.invoice.findMany({
-      where: { customerId: params.customerId, status: { in: ["UNPAID", "PARTIALLY_PAID", "OVERDUE"] } },
+      where: {
+        customerId: params.customerId,
+        workspaceId: params.workspaceId,
+        status: { in: ["UNPAID", "PARTIALLY_PAID", "OVERDUE"] },
+      },
       orderBy: { periodStart: "asc" },
     });
 
@@ -280,7 +354,7 @@ export async function applyPayment(params: {
     });
 
     const outstanding = await tx.invoice.aggregate({
-      where: { customerId: params.customerId, status: { not: "PAID" } },
+      where: { customerId: params.customerId, workspaceId: params.workspaceId, status: { not: "PAID" } },
       _sum: { amount: true, paidAmount: true },
     });
     const stillOwes = Number(outstanding._sum.amount ?? 0) - Number(outstanding._sum.paidAmount ?? 0);

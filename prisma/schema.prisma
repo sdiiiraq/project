@@ -26,12 +26,12 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  ownedWorkspaces      Workspace[]         @relation("WorkspaceOwner")
-  memberships          WorkspaceMember[]
-  auditLogs            AuditLog[]
-  notifications        Notification[]
-  supportTickets       SupportTicket[]
-  supportMessages      SupportMessage[]
+  ownedWorkspaces       Workspace[]          @relation("WorkspaceOwner")
+  memberships           WorkspaceMember[]
+  auditLogs             AuditLog[]
+  notifications         Notification[]
+  supportTickets        SupportTicket[]
+  supportMessages       SupportMessage[]
   impersonationsAsAdmin AdminImpersonation[] @relation("ImpersonationAdmin")
   platformAdmin         PlatformAdmin?
 
@@ -56,18 +56,22 @@ enum WorkspaceStatus {
 }
 
 model Workspace {
-  id        String          @id @default(uuid()) @db.Uuid
-  name      String
-  ownerId   String          @db.Uuid
-  owner     User            @relation("WorkspaceOwner", fields: [ownerId], references: [id])
-  status    WorkspaceStatus @default(ACTIVE)
-  region    String?
-  address   String?
+  id                   String          @id @default(uuid()) @db.Uuid
+  name                 String
+  ownerId              String          @db.Uuid
+  owner                User            @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  status               WorkspaceStatus @default(ACTIVE)
+  region               String?
+  address              String?
   normalAmperePriceIQD Int?
   goldAmperePriceIQD   Int?
-  onboardedAt DateTime?
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  // عدّاد أرقام المشتركين. يُزاد بـ UPDATE ذرّي (‏... + 1 RETURNING) بدل COUNT(*) + 1،
+  // فلا يمكن لطلبين متزامنين الحصول على نفس الرقم. يتقدّم للأمام فقط — قد ينشأ فراغ
+  // إذا فشلت عملية الإضافة بعد حجز الرقم، وهذا مقبول ومقصود.
+  subscriberSequence   Int             @default(0)
+  onboardedAt          DateTime?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
 
   members              WorkspaceMember[]
   generators           Generator[]
@@ -92,6 +96,8 @@ model Workspace {
   supportTickets       SupportTicket[]
   impersonations       AdminImpersonation[]
   aiConversations      AIConversation[]
+  billingJobs          BillingJob[]
+  aiRateLimitBuckets   AiRateLimitBucket[]
 
   @@map("workspaces")
 }
@@ -147,18 +153,18 @@ model WorkspaceMemberPermission {
 // ============================================================
 
 model Generator {
-  id           String   @id @default(uuid()) @db.Uuid
-  workspaceId  String   @db.Uuid
-  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  name         String
-  ownerName    String?
-  phone        String?
-  region       String?
-  address      String?
-  capacityAmps Int?
-  fuelConsumptionPerHour Decimal? @db.Decimal(10, 2)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                     String    @id @default(uuid()) @db.Uuid
+  workspaceId            String    @db.Uuid
+  workspace              Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name                   String
+  ownerName              String?
+  phone                  String?
+  region                 String?
+  address                String?
+  capacityAmps           Int?
+  fuelConsumptionPerHour Decimal?  @db.Decimal(10, 2)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
   customers         Customer[]
   equipment         Equipment[]
@@ -196,13 +202,13 @@ enum CustomerStatus {
 
 enum CustomerType {
   RESIDENTIAL // سكني
-  COMMERCIAL  // تجاري
-  NORMAL      // عادي
+  COMMERCIAL // تجاري
+  NORMAL // عادي
 }
 
 enum SubscriptionTier {
   NORMAL // عادي
-  GOLD   // ذهبي
+  GOLD // ذهبي
 }
 
 model Customer {
@@ -225,29 +231,35 @@ model Customer {
   updatedAt        DateTime       @updatedAt
   deletedAt        DateTime?
 
-  subscriptions  CustomerSubscription[]
-  ampereHistory  CustomerAmpereHistory[]
-  invoices       Invoice[]
-  payments       Payment[]
+  subscriptions CustomerSubscription[]
+  ampereHistory CustomerAmpereHistory[]
+  invoices      Invoice[]
+  payments      Payment[]
 
   @@unique([workspaceId, subscriberNumber])
   @@index([workspaceId, status])
   @@index([workspaceId, name])
+  // الترتيب الافتراضي لقائمة المشتركين (الأحدث أولًا) واستعلامات النمو الشهري
+  @@index([workspaceId, createdAt])
+  // بحث substring (‏contains) لا يستطيع استخدام فهرس B-tree أعلاه — يحتاج trigram.
+  // مقصور على name وphone فقط، انظر تعليل الأعمدة في ملف الترحيل.
+  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([phone(ops: raw("gin_trgm_ops"))], type: Gin)
   @@map("customers")
 }
 
 model CustomerAmpereHistory {
-  id            String   @id @default(uuid()) @db.Uuid
-  customerId    String   @db.Uuid
-  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  oldAmperes    Int?
-  newAmperes    Int
-  effectiveDate DateTime
-  oldPrice      Int?
-  newPrice      Int
-  reason        String?
-  changedByUserId String @db.Uuid
-  createdAt     DateTime @default(now())
+  id              String   @id @default(uuid()) @db.Uuid
+  customerId      String   @db.Uuid
+  customer        Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  oldAmperes      Int?
+  newAmperes      Int
+  effectiveDate   DateTime
+  oldPrice        Int?
+  newPrice        Int
+  reason          String?
+  changedByUserId String   @db.Uuid
+  createdAt       DateTime @default(now())
 
   @@index([customerId])
   @@map("customer_ampere_history")
@@ -295,20 +307,20 @@ enum InvoiceStatus {
 }
 
 model Invoice {
-  id             String                @id @default(uuid()) @db.Uuid
-  workspaceId    String                @db.Uuid
-  workspace      Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  customerId     String                @db.Uuid
-  customer       Customer              @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  subscriptionId String                @db.Uuid
-  subscription   CustomerSubscription  @relation(fields: [subscriptionId], references: [id])
+  id             String               @id @default(uuid()) @db.Uuid
+  workspaceId    String               @db.Uuid
+  workspace      Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  customerId     String               @db.Uuid
+  customer       Customer             @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  subscriptionId String               @db.Uuid
+  subscription   CustomerSubscription @relation(fields: [subscriptionId], references: [id])
   periodStart    DateTime
   periodEnd      DateTime
   amount         Int
-  paidAmount     Int                   @default(0)
-  status         InvoiceStatus         @default(UNPAID)
-  createdAt      DateTime              @default(now())
-  updatedAt      DateTime              @updatedAt
+  paidAmount     Int                  @default(0)
+  status         InvoiceStatus        @default(UNPAID)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
 
   payments Payment[]
 
@@ -320,19 +332,19 @@ model Invoice {
 }
 
 model Payment {
-  id              String   @id @default(uuid()) @db.Uuid
-  workspaceId     String   @db.Uuid
+  id              String    @id @default(uuid()) @db.Uuid
+  workspaceId     String    @db.Uuid
   workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  customerId      String   @db.Uuid
-  customer        Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  invoiceId       String?  @db.Uuid
-  invoice         Invoice? @relation(fields: [invoiceId], references: [id])
+  customerId      String    @db.Uuid
+  customer        Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  invoiceId       String?   @db.Uuid
+  invoice         Invoice?  @relation(fields: [invoiceId], references: [id])
   amount          Int
-  date            DateTime @default(now())
-  method          String   @default("CASH")
+  date            DateTime  @default(now())
+  method          String    @default("CASH")
   note            String?
-  createdByUserId String   @db.Uuid
-  createdAt       DateTime @default(now())
+  createdByUserId String    @db.Uuid
+  createdAt       DateTime  @default(now())
 
   adjustments PaymentAdjustment[]
   ledgerEntry LedgerEntry?
@@ -344,27 +356,27 @@ model Payment {
 
 // لا يُحذف Payment مطلقًا — أي تصحيح يتم عبر Adjustment
 model PaymentAdjustment {
-  id            String   @id @default(uuid()) @db.Uuid
-  paymentId     String   @db.Uuid
-  payment       Payment  @relation(fields: [paymentId], references: [id])
-  amount        Int
-  reason        String
-  actorUserId   String   @db.Uuid
-  createdAt     DateTime @default(now())
+  id          String   @id @default(uuid()) @db.Uuid
+  paymentId   String   @db.Uuid
+  payment     Payment  @relation(fields: [paymentId], references: [id])
+  amount      Int
+  reason      String
+  actorUserId String   @db.Uuid
+  createdAt   DateTime @default(now())
 
   @@map("payment_adjustments")
 }
 
 model FinancialPeriod {
-  id           String    @id @default(uuid()) @db.Uuid
-  workspaceId  String    @db.Uuid
-  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  year         Int
-  month        Int
-  status       String    @default("OPEN") // OPEN | CLOSED
-  closedByUserId String? @db.Uuid
-  closedAt     DateTime?
-  createdAt    DateTime  @default(now())
+  id             String    @id @default(uuid()) @db.Uuid
+  workspaceId    String    @db.Uuid
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  year           Int
+  month          Int
+  status         String    @default("OPEN") // OPEN | CLOSED
+  closedByUserId String?   @db.Uuid
+  closedAt       DateTime?
+  createdAt      DateTime  @default(now())
 
   @@unique([workspaceId, year, month])
   @@map("financial_periods")
@@ -380,7 +392,7 @@ model LedgerEntry {
   id          String          @id @default(uuid()) @db.Uuid
   workspaceId String          @db.Uuid
   workspace   Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  type        String          // PAYMENT | ADJUSTMENT | EXPENSE | FUEL | ...
+  type        String // PAYMENT | ADJUSTMENT | EXPENSE | FUEL | ...
   direction   LedgerDirection
   referenceId String
   paymentId   String?         @unique @db.Uuid
@@ -398,11 +410,11 @@ model LedgerEntry {
 // ============================================================
 
 model ExpenseCategory {
-  id          String    @id @default(uuid()) @db.Uuid
-  workspaceId String?   @db.Uuid
+  id          String     @id @default(uuid()) @db.Uuid
+  workspaceId String?    @db.Uuid
   workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   name        String
-  isSystem    Boolean   @default(false)
+  isSystem    Boolean    @default(false)
 
   expenses Expense[]
 
@@ -428,16 +440,16 @@ model Expense {
 }
 
 model FuelPurchase {
-  id              String   @id @default(uuid()) @db.Uuid
-  workspaceId     String   @db.Uuid
+  id              String    @id @default(uuid()) @db.Uuid
+  workspaceId     String    @db.Uuid
   workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  quantityLiters  Decimal  @db.Decimal(10, 2)
+  quantityLiters  Decimal   @db.Decimal(10, 2)
   pricePerLiter   Int
   totalCost       Int
   supplier        String?
   date            DateTime
-  createdByUserId String   @db.Uuid
-  createdAt       DateTime @default(now())
+  createdByUserId String    @db.Uuid
+  createdAt       DateTime  @default(now())
 
   @@index([workspaceId, date])
   @@map("fuel_purchases")
@@ -532,15 +544,16 @@ model Notification {
   createdAt   DateTime  @default(now())
 
   @@index([workspaceId, userId, readAt])
+  @@index([workspaceId, createdAt])
   @@map("notifications")
 }
 
 model AuditLog {
-  id          String    @id @default(uuid()) @db.Uuid
-  workspaceId String?   @db.Uuid
+  id          String     @id @default(uuid()) @db.Uuid
+  workspaceId String?    @db.Uuid
   workspace   Workspace? @relation(fields: [workspaceId], references: [id])
-  actorUserId String?   @db.Uuid
-  actor       User?     @relation(fields: [actorUserId], references: [id])
+  actorUserId String?    @db.Uuid
+  actor       User?      @relation(fields: [actorUserId], references: [id])
   action      String
   entity      String
   entityId    String?
@@ -548,10 +561,11 @@ model AuditLog {
   after       Json?
   ipAddress   String?
   userAgent   String?
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime   @default(now())
 
   @@index([workspaceId, createdAt])
   @@index([entity, entityId])
+  @@index([createdAt])
   @@map("audit_logs")
 }
 
@@ -560,9 +574,9 @@ model AuditLog {
 // ============================================================
 
 model Feature {
-  key         String        @id
-  name        String
-  description String?
+  key          String                     @id
+  name         String
+  description  String?
   planFeatures PlanFeature[]
   overrides    WorkspaceFeatureOverride[]
 
@@ -570,16 +584,18 @@ model Feature {
 }
 
 model PlatformPlan {
-  id              String   @id @default(uuid()) @db.Uuid
-  name            String
-  slug            String   @unique
-  price           Int
-  currency        String   @default("IQD")
-  billingCycle    String   @default("MONTHLY")
-  customerLimit   Int?
-  userLimit       Int?
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
+  id             String   @id @default(uuid()) @db.Uuid
+  name           String
+  slug           String   @unique
+  price          Int
+  currency       String   @default("IQD")
+  billingCycle   String   @default("MONTHLY")
+  customerLimit  Int?
+  userLimit      Int?
+  // حد طلبات المساعد الذكي لكل دورة فوترة (شهر). null = بلا حد.
+  aiRequestLimit Int?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
 
   features      PlanFeature[]
   subscriptions PlatformSubscription[]
@@ -612,14 +628,14 @@ model WorkspaceFeatureOverride {
 }
 
 model Usage {
-  id          String   @id @default(uuid()) @db.Uuid
-  workspaceId String   @db.Uuid
+  id          String    @id @default(uuid()) @db.Uuid
+  workspaceId String    @db.Uuid
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  metric      String   // customers | users | storage_mb | ai_requests | reports
+  metric      String // customers | users | storage_mb | ai_requests | reports
   value       Int
   periodStart DateTime
   periodEnd   DateTime
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
 
   @@unique([workspaceId, metric, periodStart, periodEnd])
   @@map("usage_records")
@@ -635,22 +651,22 @@ enum PlatformSubscriptionStatus {
 }
 
 model PlatformSubscription {
-  id           String                      @id @default(uuid()) @db.Uuid
-  workspaceId  String                      @unique @db.Uuid
-  workspace    Workspace                   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  planId       String                      @db.Uuid
-  plan         PlatformPlan                @relation(fields: [planId], references: [id])
-  status       PlatformSubscriptionStatus  @default(TRIAL)
-  trialStart   DateTime?
-  trialEnd     DateTime?
-  startDate    DateTime                    @default(now())
-  endDate      DateTime?
-  price        Int
-  currency     String                      @default("IQD")
-  autoRenew    Boolean                     @default(true)
-  notes        String?
-  createdAt    DateTime                    @default(now())
-  updatedAt    DateTime                    @updatedAt
+  id          String                     @id @default(uuid()) @db.Uuid
+  workspaceId String                     @unique @db.Uuid
+  workspace   Workspace                  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  planId      String                     @db.Uuid
+  plan        PlatformPlan               @relation(fields: [planId], references: [id])
+  status      PlatformSubscriptionStatus @default(TRIAL)
+  trialStart  DateTime?
+  trialEnd    DateTime?
+  startDate   DateTime                   @default(now())
+  endDate     DateTime?
+  price       Int
+  currency    String                     @default("IQD")
+  autoRenew   Boolean                    @default(true)
+  notes       String?
+  createdAt   DateTime                   @default(now())
+  updatedAt   DateTime                   @updatedAt
 
   transactions BillingTransaction[]
 
@@ -658,15 +674,15 @@ model PlatformSubscription {
 }
 
 model BillingTransaction {
-  id                      String                @id @default(uuid()) @db.Uuid
-  platformSubscriptionId  String                @db.Uuid
-  platformSubscription    PlatformSubscription  @relation(fields: [platformSubscriptionId], references: [id], onDelete: Cascade)
-  amount                  Int
-  currency                String                @default("IQD")
-  type                    String                // CHARGE | CREDIT | REFUND | MANUAL_ADJUSTMENT
-  provider                String                @default("MANUAL")
-  note                    String?
-  createdAt               DateTime              @default(now())
+  id                     String               @id @default(uuid()) @db.Uuid
+  platformSubscriptionId String               @db.Uuid
+  platformSubscription   PlatformSubscription @relation(fields: [platformSubscriptionId], references: [id], onDelete: Cascade)
+  amount                 Int
+  currency               String               @default("IQD")
+  type                   String // CHARGE | CREDIT | REFUND | MANUAL_ADJUSTMENT
+  provider               String               @default("MANUAL")
+  note                   String?
+  createdAt              DateTime             @default(now())
 
   @@map("billing_transactions")
 }
@@ -684,34 +700,34 @@ enum SupportTicketStatus {
 }
 
 model SupportTicket {
-  id          String              @id @default(uuid()) @db.Uuid
-  workspaceId String              @db.Uuid
-  workspace   Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  createdByUserId String          @db.Uuid
-  createdBy   User                @relation(fields: [createdByUserId], references: [id])
-  category    String
-  subject     String
-  description String
-  status      SupportTicketStatus @default(OPEN)
-  priority    String              @default("NORMAL")
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+  id              String              @id @default(uuid()) @db.Uuid
+  workspaceId     String              @db.Uuid
+  workspace       Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdByUserId String              @db.Uuid
+  createdBy       User                @relation(fields: [createdByUserId], references: [id])
+  category        String
+  subject         String
+  description     String
+  status          SupportTicketStatus @default(OPEN)
+  priority        String              @default("NORMAL")
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
 
-  messages    SupportMessage[]
+  messages SupportMessage[]
 
   @@index([workspaceId, status])
   @@map("support_tickets")
 }
 
 model SupportMessage {
-  id              String         @id @default(uuid()) @db.Uuid
-  ticketId        String         @db.Uuid
-  ticket          SupportTicket  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  authorUserId    String         @db.Uuid
-  author          User           @relation(fields: [authorUserId], references: [id])
-  body            String
-  isInternalNote  Boolean        @default(false)
-  createdAt       DateTime       @default(now())
+  id             String        @id @default(uuid()) @db.Uuid
+  ticketId       String        @db.Uuid
+  ticket         SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorUserId   String        @db.Uuid
+  author         User          @relation(fields: [authorUserId], references: [id])
+  body           String
+  isInternalNote Boolean       @default(false)
+  createdAt      DateTime      @default(now())
 
   attachments SupportAttachment[]
 
@@ -801,4 +817,96 @@ model HelpGuide {
 
   @@index([pageKey, enabled])
   @@map("help_guides")
+}
+
+// ============================================================
+// Scalability: Billing Jobs / AI Rate Limiting
+// ============================================================
+
+enum BillingJobStatus {
+  PENDING
+  PROCESSING
+  DONE
+  FAILED
+}
+
+// وحدة عمل واحدة = (workspace واحد × دورة فوترة واحدة). الـ Cron لم يعد ينفّذ الفوترة بنفسه؛
+// هو ينتج هذه السجلات فقط، والـ worker يسحبها بشكل ذرّي (FOR UPDATE SKIP LOCKED).
+// القيد @@unique([workspaceId, cycle]) هو ما يمنع فوترة نفس المولدة مرتين لنفس الشهر.
+model BillingJob {
+  id              String           @id @default(uuid()) @db.Uuid
+  workspaceId     String           @db.Uuid
+  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  cycle           String // "YYYY-MM" — دورة الفوترة
+  status          BillingJobStatus @default(PENDING)
+  attempts        Int              @default(0)
+  maxAttempts     Int              @default(5)
+  runAfter        DateTime         @default(now()) // backoff: لا تُسحب قبل هذا الوقت
+  lockedAt        DateTime?
+  lockedBy        String? // معرّف الـ invocation الذي يملك القفل حاليًا
+  startedAt       DateTime?
+  completedAt     DateTime?
+  failedAt        DateTime?
+  error           String?
+  invoicesCreated Int              @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@unique([workspaceId, cycle])
+  @@index([status, runAfter])
+  @@index([cycle, status])
+  @@map("billing_jobs")
+}
+
+// Rate limiting موزّع عبر PostgreSQL — نافذة ثابتة (fixed window) لكل workspace.
+// الزيادة ذرّية عبر INSERT ... ON CONFLICT DO UPDATE ... WHERE، فلا يمكن لطلبين متزامنين تجاوز الحد.
+model AiRateLimitBucket {
+  workspaceId  String    @db.Uuid
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  bucketStart  DateTime // بداية النافذة (مقرّبة لأسفل لأقرب دقيقة)
+  requestCount Int       @default(0)
+
+  @@id([workspaceId, bucketStart])
+  @@index([bucketStart]) // للتنظيف الدوري للنوافذ القديمة
+  @@map("ai_rate_limit_buckets")
+}
+
+// Rate limiting عام (غير مرتبط بمولدة) — للمسارات العامة مثل التسجيل، حيث المفتاح
+// عنوان IP وليس workspaceId. لا مفتاح خارجي هنا لأن الهوية قد لا تخص أي مستأجر.
+// المُعرِّف يُخزَّن مُجزَّأً (hash) وليس كنص صريح.
+model RateLimitBucket {
+  scope        String // "signup" وغيرها
+  identifier   String // SHA-256 للمُعرِّف (IP مثلًا)
+  bucketStart  DateTime
+  requestCount Int      @default(0)
+
+  @@id([scope, identifier, bucketStart])
+  @@index([bucketStart])
+  @@map("rate_limit_buckets")
+}
+
+enum CronRunStatus {
+  RUNNING
+  SUCCESS
+  FAILED
+}
+
+// سجل تنفيذ المهام المجدولة — مراقبة دائمة لا تعتمد على الاحتفاظ بسجلات المنصّة.
+// يجيب عن: هل عملت الدورة؟ متى؟ كم استغرقت؟ كم عملًا نجح/فشل/بقي معلقًا؟ ولماذا فشلت؟
+model CronRun {
+  id          String        @id @default(uuid()) @db.Uuid
+  job         String // "monthly-invoices" | "billing-worker" | "daily-notifications" | "trial-expiration"
+  status      CronRunStatus @default(RUNNING)
+  startedAt   DateTime      @default(now())
+  completedAt DateTime?
+  durationMs  Int?
+  processed   Int           @default(0)
+  failed      Int           @default(0)
+  pending     Int           @default(0)
+  error       String?
+  details     Json?
+
+  @@index([job, startedAt])
+  @@index([status])
+  @@map("cron_runs")
 }

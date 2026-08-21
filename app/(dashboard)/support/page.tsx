@@ -6,21 +6,37 @@ import { CreateTicketDialog } from "@/components/support/create-ticket-dialog";
 import { TicketStatusBadge } from "@/components/support/ticket-status-badge";
 import { LifeBuoy, ChevronLeft } from "lucide-react";
 import { formatDate } from "@/lib/utils/date";
+import { Pagination } from "@/components/shared/pagination";
 
-export default async function SupportPage() {
+const PAGE_SIZE = 20;
+
+export default async function SupportPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { page: pageParam } = await searchParams;
   const { workspace } = await requireWorkspace();
+  const page = Math.max(1, Number(pageParam) || 1);
 
-  const tickets = await db.supportTicket.findMany({
-    where: { workspaceId: workspace.id },
-    orderBy: { updatedAt: "desc" },
-  });
+  // كانت تُحمّل كل تذاكر المولدة بلا أي حد — وهي تنمو باستمرار ولا تتقلّص.
+  const where = { workspaceId: workspace.id };
+  const [total, tickets] = await Promise.all([
+    db.supportTicket.count({ where }),
+    db.supportTicket.findMany({
+      where,
+      orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl">الدعم الفني</h1>
-          <p className="text-sm text-muted-foreground">{tickets.length} تذكرة</p>
+          <p className="text-sm text-muted-foreground">{total} تذكرة</p>
         </div>
         <CreateTicketDialog />
       </div>
@@ -52,6 +68,8 @@ export default async function SupportPage() {
           ))}
         </div>
       )}
+
+      <Pagination page={page} pageSize={PAGE_SIZE} total={total} basePath="/support" searchParams={{}} />
     </div>
   );
 }

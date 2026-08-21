@@ -1,35 +1,51 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { db } from "@/lib/db";
-import { generateMonthlyInvoices } from "@/lib/domain/billing";
-import { notifyWorkspace } from "@/lib/domain/notifications";
+import { type NextRequest } from "next/server";
+import { runCronJob } from "@/lib/cron/run";
+import {
+  cycleKey,
+  enqueueBillingCycle,
+  drainBillingJobs,
+  reclaimStalledJobs,
+  getCycleSummary,
+} from "@/lib/domain/billing-jobs";
 
-// Vercel Cron — يعمل أول كل شهر وينشئ فواتير الاشتراكات النشطة لكل Workspace.
-// Idempotent: Unique Constraint على (customerId, periodStart, periodEnd) يمنع التكرار عند إعادة التشغيل.
+// حد مدة التنفيذ على Vercel. الميزانية الزمنية أدناه أقصر منه عمدًا حتى ينتهي الـ handler
+// بشكل نظيف ويُرجع ملخصًا بدل أن يُقطع في المنتصف.
+export const maxDuration = 60;
+
+const DRAIN_BUDGET_MS = 45_000;
+
+/**
+ * Vercel Cron — أول كل شهر. هذا المسار "منتج" وليس منفّذًا:
+ * يُدرج وحدة عمل واحدة لكل workspace نشط، ثم يبدأ معالجة ما يستطيع ضمن ميزانيته الزمنية.
+ * ما لا يكتمل هنا يُكمله /api/cron/billing-worker لاحقًا — الدورة قابلة للاستئناف بالكامل.
+ */
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  return runCronJob("monthly-invoices", request, async () => {
+    const now = new Date();
+    const year = now.getUTCFullYear();
+    const month = now.getUTCMonth() + 1;
+    const cycle = cycleKey(year, month);
 
-  const now = new Date();
-  const year = now.getUTCFullYear();
-  const month = now.getUTCMonth() + 1;
+    const reclaimed = await reclaimStalledJobs();
+    const { enqueued, scanned } = await enqueueBillingCycle(cycle);
+    const drain = await drainBillingJobs({ budgetMs: DRAIN_BUDGET_MS });
+    const summary = await getCycleSummary(cycle);
 
-  const workspaces = await db.workspace.findMany({ where: { status: "ACTIVE" }, select: { id: true } });
-
-  const results = [];
-  for (const workspace of workspaces) {
-    const result = await generateMonthlyInvoices(workspace.id, year, month);
-    results.push({ workspaceId: workspace.id, ...result });
-    if (result.created > 0) {
-      await notifyWorkspace({
-        workspaceId: workspace.id,
-        type: "SUBSCRIPTION",
-        title: "موعد استلام الاشتراك",
-        body: `تم إصدار ${result.created} فاتورة اشتراك لهذا الشهر (شهر ${month}). حان موعد التحصيل.`,
-      });
-    }
-  }
-
-  return NextResponse.json({ year, month, workspaces: results.length, results });
+    return {
+      processed: drain.processed,
+      failed: drain.failed,
+      pending: summary.pending + summary.processing,
+      details: {
+        cycle,
+        year,
+        month,
+        workspacesScanned: scanned,
+        jobsEnqueued: enqueued,
+        stalledJobsReclaimed: reclaimed,
+        invoicesCreated: drain.invoicesCreated,
+        budgetExhausted: drain.budgetExhausted,
+        summary,
+      },
+    };
+  });
 }

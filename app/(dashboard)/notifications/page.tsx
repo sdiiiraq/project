@@ -6,15 +6,29 @@ import { Bell, CheckCheck } from "lucide-react";
 import { markAllNotificationsRead } from "@/lib/actions/notification.actions";
 import { NotificationRow } from "./notification-row";
 import { formatDateTime } from "@/lib/utils/date";
+import { Pagination } from "@/components/shared/pagination";
 
-export default async function NotificationsPage() {
+const PAGE_SIZE = 50;
+
+export default async function NotificationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { page: pageParam } = await searchParams;
   const { workspace, user } = await requireWorkspace();
+  const page = Math.max(1, Number(pageParam) || 1);
 
-  const notifications = await db.notification.findMany({
-    where: { workspaceId: workspace.id, OR: [{ userId: user.id }, { userId: null }] },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-  });
+  const where = { workspaceId: workspace.id, OR: [{ userId: user.id }, { userId: null }] };
+  const [total, notifications] = await Promise.all([
+    db.notification.count({ where }),
+    db.notification.findMany({
+      where,
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+  ]);
 
   const hasUnread = notifications.some((n) => !n.readAt);
 
@@ -52,6 +66,8 @@ export default async function NotificationsPage() {
           ))}
         </div>
       )}
+
+      <Pagination page={page} pageSize={PAGE_SIZE} total={total} basePath="/notifications" searchParams={{}} />
     </div>
   );
 }

@@ -16,7 +16,8 @@ export default async function MaintenancePage() {
   requirePermission(permissions, "maintenance.read");
 
   const [equipment, records] = await Promise.all([
-    db.equipment.findMany({ where: { workspaceId: workspace.id }, orderBy: { createdAt: "desc" } }),
+    // سقف أمان: قائمة المعدات تُغذّي قائمة اختيار، وعددها صغير عمليًا لكن بلا حد في الكود.
+    db.equipment.findMany({ where: { workspaceId: workspace.id }, orderBy: { createdAt: "desc" }, take: 200 }),
     db.maintenanceRecord.findMany({
       where: { workspaceId: workspace.id },
       include: { equipment: true },
